@@ -87,13 +87,23 @@ jobs:
             const { owner, repo } = context.repo;
 
             // Owners are configured per system as @user or @org/team. Only plain
-            // @user handles can be assignees (teams cannot); the @mentions in the
-            // issue body notify everyone either way. Assignment is best-effort:
-            // non-collaborators are silently ignored by the API.
+            // @user handles that are repo collaborators can be assignees; the
+            // @mentions in the issue body notify everyone either way. Assignment
+            // is attempted separately and best-effort, so an unknown handle (e.g.
+            // a placeholder) can never block the issue itself.
             const assignees = (summary.owners_to_notify || [])
               .map(o => o.owner)
               .filter(h => h && h.startsWith('@') && !h.includes('/'))
               .map(h => h.slice(1));
+
+            async function tryAssign(issue_number) {
+              if (!assignees.length) return;
+              try {
+                await github.rest.issues.addAssignees({ owner, repo, issue_number, assignees });
+              } catch (e) {
+                core.warning(`Could not assign ${assignees.join(', ')}: ${e.message}`);
+              }
+            }
 
             const existing = await github.rest.issues.listForRepo({
               owner, repo, state: 'open', labels: label, per_page: 1,
@@ -102,11 +112,7 @@ jobs:
             if (existing.data.length) {
               const number = existing.data[0].number;
               await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
-              if (assignees.length) {
-                try {
-                  await github.rest.issues.addAssignees({ owner, repo, issue_number: number, assignees });
-                } catch (e) { core.warning(`Could not add assignees: ${e.message}`); }
-              }
+              await tryAssign(number);
               core.info(`Commented on existing exception issue #${number}`);
             } else {
               const today = new Date().toISOString().slice(0, 10);
@@ -115,8 +121,8 @@ jobs:
                 title: `Access exceptions detected (${today})`,
                 body,
                 labels: [label],
-                assignees,
               });
+              await tryAssign(res.data.number);
               core.info(`Opened exception issue #${res.data.number}`);
             }
 

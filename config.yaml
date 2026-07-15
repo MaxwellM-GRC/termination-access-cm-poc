@@ -35,7 +35,7 @@ systems:
   - name: Nimbus CRM
     # GitHub handle (@user) or team (@org/team) that owns remediation for this
     # system. Used to @mention and best-effort assign the exception issue.
-    owner: "@nimbus-crm-admin"
+    owner: "@MaxwellM-GRC"
     file: data/nimbus_crm_accounts.csv
     fields:
       account_id: account_id
@@ -49,7 +49,7 @@ systems:
     disabled_values: [Disabled]
 
   - name: Coranto ERP
-    owner: "@coranto-erp-admin"
+    owner: "@MaxwellM-GRC"
     file: data/coranto_erp_accounts.csv
     fields:
       account_id: login
@@ -63,7 +63,7 @@ systems:
     disabled_values: [Inactive]
 
   - name: Keystone SSO
-    owner: "@keystone-iam-admin"
+    owner: "@MaxwellM-GRC"
     file: data/keystone_sso_accounts.csv
     fields:
       account_id: user_id
