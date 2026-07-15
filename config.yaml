@@ -1,0 +1,77 @@
+# Termination Access Review - configuration
+#
+# Everything an auditor would want to see about HOW the test was run lives here:
+# the de-provisioning SLA, and exactly how each system's raw columns and status
+# values were mapped into the normalized model. Change the mapping, not the code,
+# when you onboard a new extract.
+
+# De-provisioning SLA in calendar days from termination date. Access still
+# enabled, or disabled after this window, is a deficiency. Tune per your policy.
+deprovisioning_sla_days: 7
+
+# Remediation policy for open exceptions (used by the escalation workflow).
+remediation:
+  # Days an access-exception issue may stay open before it is escalated.
+  issue_sla_days: 5
+  # GitHub @user or @org/team notified when an exception breaches the SLA
+  # (typically the control owner / GRC lead, above the system admins).
+  escalation_owner: "@grc-control-owner"
+
+# HR roster (the source of truth for who was terminated and when).
+hr_source:
+  file: data/meridian_hr_terminations.csv
+  fields:
+    employee_id: employee_id
+    full_name: full_name
+    email: work_email
+    department: department
+    job_title: job_title
+    termination_date: termination_date
+    termination_type: termination_type
+
+# Downstream systems under review. Each adapter maps that system's columns and
+# its status vocabulary onto the common model.
+systems:
+  - name: Nimbus CRM
+    # GitHub handle (@user) or team (@org/team) that owns remediation for this
+    # system. Used to @mention and best-effort assign the exception issue.
+    owner: "@nimbus-crm-admin"
+    file: data/nimbus_crm_accounts.csv
+    fields:
+      account_id: account_id
+      username: username
+      email: email
+      display_name: display_name
+      state: status
+      last_activity: last_login
+      deprovisioned_date: disabled_date
+    active_values: [Active]
+    disabled_values: [Disabled]
+
+  - name: Coranto ERP
+    owner: "@coranto-erp-admin"
+    file: data/coranto_erp_accounts.csv
+    fields:
+      account_id: login
+      username: login
+      email: email
+      display_name: employee_name
+      state: account_status
+      last_activity: last_activity
+      deprovisioned_date: deactivation_date
+    active_values: [Active]
+    disabled_values: [Inactive]
+
+  - name: Keystone SSO
+    owner: "@keystone-iam-admin"
+    file: data/keystone_sso_accounts.csv
+    fields:
+      account_id: user_id
+      username: upn
+      email: email
+      display_name: name
+      state: state
+      last_activity: last_sign_in
+      deprovisioned_date: deprovisioned_date
+    active_values: [Enabled]
+    disabled_values: [Disabled]

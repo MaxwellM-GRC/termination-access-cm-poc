@@ -1,0 +1,10 @@
+user_id,upn,email,name,state,last_sign_in,deprovisioned_date
+KS-8801,dwhitfield@acmefoods.example,dana.whitfield@acmefoods.example,Dana Whitfield,Disabled,2026-04-15,2026-04-16
+KS-8802,mlindqvist@acmefoods.example,marcus.lindqvist@acmefoods.example,Marcus Lindqvist,Disabled,2026-05-02,2026-05-03
+KS-8803,praman@acmefoods.example,priya.raman@acmefoods.example,Priya Raman,Enabled,2026-06-25,
+KS-8804,tnkemelu@acmefoods.example,tobias.nkemelu@acmefoods.example,Tobias Nkemelu,Disabled,2026-03-30,2026-03-31
+KS-8805,hvasquez@acmefoods.example,helena.vasquez@acmefoods.example,Helena Vasquez,Disabled,2026-06-01,2026-06-02
+KS-8806,sokafor@acmefoods.example,sam.okafor@acmefoods.example,Sam Okafor,Disabled,2026-04-27,2026-04-29
+KS-8807,gchen@acmefoods.example,grace.chen@acmefoods.example,Grace Chen,Disabled,2026-05-11,2026-05-12
+KS-8808,bhalvorsen@acmefoods.example,bjorn.halvorsen@acmefoods.example,Bjorn Halvorsen,Enabled,2026-07-01,
+KS-8809,nfarouk@acmefoods.example,nadia.farouk@acmefoods.example,Nadia Farouk,Disabled,2026-07-06,2026-07-07

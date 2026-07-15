@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+exception_log_*.csv
+exception_log.csv
+summary.json
+issue_body.md
+*.egg-info/
+.DS_Store

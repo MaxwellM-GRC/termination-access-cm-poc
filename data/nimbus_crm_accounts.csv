@@ -1,0 +1,7 @@
+account_id,username,email,display_name,status,last_login,disabled_date
+NC-4471,dwhitfield,dana.whitfield@acmefoods.example,Dana Whitfield,Active,2026-06-20,
+NC-4472,tnkemelu,tobias.nkemelu@acmefoods.example,Tobias Nkemelu,Disabled,2026-03-29,2026-04-02
+NC-4473,gchen,grace.chen@acmefoods.example,Grace Chen,Disabled,2026-05-10,2026-05-30
+NC-4474,rmontero,rafael.montero@acmefoods.example,Rafael Montero,Active,2026-07-05,
+NC-4475,lstein,laura.stein@acmefoods.example,Laura Stein,Active,2026-07-07,
+NC-4476,nfarouk,nadia.farouk@acmefoods.example,Nadia Farouk,Active,2026-07-06,

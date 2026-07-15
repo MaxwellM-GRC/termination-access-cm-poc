@@ -1,0 +1,10 @@
+employee_id,full_name,work_email,department,job_title,termination_date,termination_type
+E1001,Dana Whitfield,dana.whitfield@acmefoods.example,Sales,Account Executive,2026-04-15,Voluntary
+E1002,Marcus Lindqvist,marcus.lindqvist@acmefoods.example,Finance,Staff Accountant,2026-05-02,Involuntary
+E1003,Priya Raman,priya.raman@acmefoods.example,IT,Systems Analyst,2026-05-20,Voluntary
+E1004,Tobias Nkemelu,tobias.nkemelu@acmefoods.example,Sales,Sales Manager,2026-03-30,Involuntary
+E1005,Helena Vasquez,helena.vasquez@acmefoods.example,Operations,Operations Coordinator,2026-06-01,Voluntary
+E1006,Sam Okafor,sam.okafor@acmefoods.example,Finance,Accounts Payable Clerk,2026-04-28,Voluntary
+E1007,Grace Chen,grace.chen@acmefoods.example,Marketing,Content Lead,2026-05-11,Voluntary
+E1008,Bjorn Halvorsen,bjorn.halvorsen@acmefoods.example,IT,Contractor - DevOps,2026-06-10,Contract End
+E1009,Nadia Farouk,nadia.farouk@acmefoods.example,Sales,Account Executive,2026-07-06,Voluntary

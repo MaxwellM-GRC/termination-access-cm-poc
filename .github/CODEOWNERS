@@ -1,0 +1,20 @@
+# Change management over the automated control.
+#
+# Pull requests that touch the control logic, its configuration, or the
+# monitoring/escalation automation require review by the control owner before
+# merge. Enforce this by enabling branch protection on `main` with
+# "Require a pull request before merging" and "Require review from Code Owners".
+#
+# In an organization, replace @MaxwellM-GRC with a governance team,
+# e.g. @your-org/grc-controls, so review does not depend on one individual.
+
+# Default owner for everything in the repo.
+*                        @MaxwellM-GRC
+
+# Control logic and parameters (most sensitive: detection rules and SLAs).
+/src/detection.py        @MaxwellM-GRC
+/src/correlation.py      @MaxwellM-GRC
+/config.yaml             @MaxwellM-GRC
+
+# Monitoring, alerting, and escalation automation.
+/.github/workflows/      @MaxwellM-GRC

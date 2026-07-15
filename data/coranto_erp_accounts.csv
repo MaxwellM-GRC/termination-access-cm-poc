@@ -1,0 +1,6 @@
+login,email,employee_name,account_status,last_activity,deactivation_date
+mlindqvist,marcus.lindqvist@acmefoods.example,Marcus Lindqvist,Inactive,2026-05-01,2026-05-03
+sokafor,sam.okafor@acmefoods.example,Sam Okafor,Active,2026-05-15,
+hvasquez,helena.vasquez@acmefoods.example,Helena Vasquez,Inactive,2026-05-30,2026-06-05
+praman,priya.raman@acmefoods.example,Priya Raman,Inactive,2026-05-19,2026-05-21
+achowdhury,anil.chowdhury@acmefoods.example,Anil Chowdhury,Active,2026-07-06,
