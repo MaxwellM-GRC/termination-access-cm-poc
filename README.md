@@ -164,6 +164,16 @@ driven by cron, Airflow, or an orchestration platform, with each run's log
 retained as dated evidence. This maps to the continuous-monitoring control family
 in NIST SP 800-53 (CA-7) and the ongoing-monitoring intent of COBIT 2019 DSS05.
 
+## Why the Access Review workflow shows red
+A red Access Review run is intended behavior, not a broken build.
+The monitoring workflow (access-review.yml) runs the control against the sample data, which contains seeded exceptions (terminated employees still holding active access). When it finds actionable exceptions, it deliberately exits non-zero so a real deployment would trigger an alert. A monitoring control that stayed green while exceptions existed would be failing at its one job.
+So on this repo you will typically see two states side by side, both correct:
+
+- **CI (ci.yml)** is green. This runs the test suite and tracks code health. It is the run the README badge reflects.
+- **Access Review** (access-review.yml) is red. The functional steps (input validation, review, evidence upload, issue creation) all succeed; only the final step fails on purpose to raise the alert. The findings it detects are recorded in the access-exception issue.
+
+To see a clean (green) Access Review run, point it at data with no outstanding exceptions.
+
 ## Onboarding another system
 
 No code change. Add a block under `systems:` in `config.yaml` mapping the new
