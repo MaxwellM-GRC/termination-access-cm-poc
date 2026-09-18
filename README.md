@@ -102,8 +102,8 @@ Findings: 14  (critical 9, high 5, info 0)
            -> Account disabled 2026-05-30, 12 day(s) past the 7-day SLA deadline.
 ```
 
-The review is fail-closed: it validates the completeness and accuracy of every
-input extract first and, if a mapped column is missing, aborts before drawing any
+The review stops when evidence cannot be verified: it validates the completeness and accuracy of every
+input extract first and, if a mapped column is missing, stops before drawing any
 conclusion. Exit codes: `0` clean, `2` actionable findings (with `--fail-on`),
 `3` input validation failed.
 
@@ -115,7 +115,7 @@ you would hand to an external auditor.
 
 ## Continuous monitoring
 
-This is built to run on a cadence, not once. A point-in-time termination review
+This is built to run on a cadence, not once. A point in time termination review
 tells you about the access gaps that existed on the day someone happened to look;
 run on a schedule against fresh extracts, the same logic becomes a continuously
 monitored control that surfaces each gap as it arises and builds a persistent
@@ -202,11 +202,11 @@ config.yaml            SLA + per-system schema mappings (audit-reproducible)
 data/                  Fictional HR roster + 3 system account extracts
 src/
   models.py            Normalized data structures
-  integrity.py         Input edit checks (IPE completeness/accuracy), fail-closed
+  integrity.py         Input evidence completeness and accuracy checks that stop the review when evidence cannot be verified
   loaders.py           Read + normalize each extract
   correlation.py       Identity correlation across systems
   detection.py         Control rules TA-01–TA-04
-  reporting.py         Console summary, RCM ready CSV/JSON + case summaries
+  reporting.py         Console summary, CSV/JSON ready for review + case summaries
   main.py              CLI orchestrator (--out / --summary-json / --fail-on)
 tests/                 Unit tests: correlation, rules, integrity, outputs, exit codes
 docs/
@@ -231,6 +231,11 @@ the approach — cross-application identity correlation for a single ITGC — on
 fictional data. Production concerns (API ingestion, governed identity mapping,
 per-system SLAs, change control over the tool itself) are noted in the control
 narrative.
+
+## Shared terminology
+
+Plain language definitions for shared assurance terms are available in the
+[portfolio glossary](https://github.com/MaxwellM-GRC/grc-control-core/blob/v0.1.1/docs/glossary.md).
 
 ## License
 
