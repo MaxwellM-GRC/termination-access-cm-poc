@@ -35,14 +35,14 @@ cases in the sample data show why per-system review misses things:
 
 Only correlating identities across all three systems surfaces both.
 
-## What it checks
+## What this control tests
 
-| Rule | Assertion | Flags | Severity |
-|------|-----------|-------|----------|
-| R1 | Access removed | Account still active after termination | Critical |
-| R2 | Removal timely | Account disabled after the SLA deadline | High |
-| R3 | No post-term use | Activity dated after termination | Critical |
-| R4 | Identity reliable | Account matched by name only — confirm manually | Info |
+| Control | Control description | Severity |
+|---------|---------------------|----------|
+| R1 | Confirm access was removed. Flags an account still active after termination. | Critical |
+| R2 | Confirm access was removed on time. Flags an account disabled after the allowed deadline. | High |
+| R3 | Confirm there was no use after termination. Flags activity dated after the termination date. | Critical |
+| R4 | Confirm the identity match is reliable. Flags an account matched by name only for manual confirmation. | Info |
 
 ## How it works
 
