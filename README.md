@@ -155,6 +155,13 @@ Cases open past the remediation SLA (`config.yaml` →
 gives the control a full exception-aging trail: detection → assignment →
 remediation → escalation → closure.
 
+## Human decision boundary
+
+Automation identifies and routes an exception; it does not disable a production
+account, accept risk, or close an exception case. A designated human owner must
+approve any remediation, evaluate the required lookback, and approve closure
+from retained evidence.
+
 Locally or in another scheduler, the same behavior is driven by flags:
 
 ```bash
