@@ -1,9 +1,7 @@
 name: Exception Escalation
 
-# Ages open access-exception issues and escalates any that have stayed open past
-# the remediation SLA (config.yaml -> remediation.issue_sla_days). Escalation =
-# an `escalated` label plus a comment tagging the escalation owner. This gives
-# the control an exception-aging trail: detection -> assignment -> escalation.
+# Ages each open access-exception case and escalates cases that have stayed open
+# past the remediation SLA (config.yaml -> remediation.issue_sla_days).
 
 on:
   schedule:
@@ -52,10 +50,12 @@ jobs:
             const owner = (process.env.ESCALATION_OWNER || '').trim();
             const { owner: repoOwner, repo } = context.repo;
             const label = 'access-exception';
+            const caseLabel = 'access-exception-case';
             const escalatedLabel = 'escalated';
 
             const issues = await github.paginate(github.rest.issues.listForRepo, {
-              owner: repoOwner, repo, state: 'open', labels: label, per_page: 100,
+              owner: repoOwner, repo, state: 'open',
+              labels: `${label},${caseLabel}`, per_page: 100,
             });
 
             const now = Date.now();

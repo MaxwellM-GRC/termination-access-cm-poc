@@ -49,6 +49,9 @@ def run(
         cfg = yaml.safe_load(fh)
 
     sla_days = sla_override if sla_override is not None else cfg["deprovisioning_sla_days"]
+    termination_type_slas = cfg.get("termination_type_sla_days", {})
+    control = cfg.get("control", {})
+    rule_responses = cfg.get("rule_responses", {})
 
     system_owners = {
         s["name"]: s["owner"] for s in cfg["systems"] if s.get("owner")
@@ -65,7 +68,8 @@ def run(
         result = ReviewResult(input_valid=False)
         if summary_json_path:
             reporting.write_summary_json(
-                result, sla_days, summary_json_path, system_owners, input_checks
+                result, sla_days, summary_json_path, system_owners, input_checks,
+                control, rule_responses,
             )
         print("\nInput validation FAILED (see INPUT INTEGRITY above). Review aborted.")
         return result
@@ -79,7 +83,7 @@ def run(
         accounts.extend(loaders.load_accounts(system_cfg))
 
     identities, unmatched = correlation.correlate(employees, accounts)
-    findings = detection.evaluate(identities, sla_days)
+    findings = detection.evaluate(identities, sla_days, termination_type_slas)
 
     result = ReviewResult(
         findings=findings,
@@ -92,18 +96,23 @@ def run(
     reporting.print_summary(result)
 
     if out_path:
-        path = reporting.write_exception_log(findings, out_path)
+        path = reporting.write_exception_log(findings, out_path, rule_responses)
         print(f"\nException log written to: {path}")
 
     if summary_json_path:
         path = reporting.write_summary_json(
-            result, sla_days, summary_json_path, system_owners, input_checks
+            result, sla_days, summary_json_path, system_owners, input_checks,
+            control, rule_responses,
         )
         print(f"Summary JSON written to: {path}")
 
     if issue_md_path:
         with open(issue_md_path, "w", encoding="utf-8") as fh:
-            fh.write(reporting.render_markdown_summary(result, sla_days, system_owners))
+            fh.write(
+                reporting.render_markdown_summary(
+                    result, sla_days, system_owners, control, rule_responses
+                )
+            )
         print(f"Issue markdown written to: {issue_md_path}")
 
     return result

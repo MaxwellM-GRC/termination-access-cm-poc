@@ -23,6 +23,7 @@ _SEVERITY_ORDER = {
 }
 
 _COLUMNS = [
+    "finding_id",
     "employee_id",
     "full_name",
     "department",
@@ -34,6 +35,11 @@ _COLUMNS = [
     "severity",
     "days_late",
     "detail",
+    "remediation",
+    "mitigation",
+    "root_cause",
+    "closure_evidence",
+    "escalation",
 ]
 
 
@@ -41,12 +47,22 @@ def _sorted(findings: list[Finding]) -> list[Finding]:
     return sorted(findings, key=lambda f: (_SEVERITY_ORDER[f.severity], f.system))
 
 
-def write_exception_log(findings: list[Finding], path: str) -> str:
+def _response_for(finding: Finding, rule_responses: dict | None) -> dict:
+    return (rule_responses or {}).get(finding.rule, {})
+
+
+def _finding_row(finding: Finding, rule_responses: dict | None) -> dict:
+    return {**finding.as_row(), **_response_for(finding, rule_responses)}
+
+
+def write_exception_log(
+    findings: list[Finding], path: str, rule_responses: dict | None = None
+) -> str:
     with open(path, "w", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=_COLUMNS)
         writer.writeheader()
         for finding in _sorted(findings):
-            writer.writerow(finding.as_row())
+            writer.writerow(_finding_row(finding, rule_responses))
     return path
 
 
@@ -108,7 +124,18 @@ def print_integrity(sources) -> None:
     print("-" * 72)
     for s in sources:
         if not s.ok:
-            print(f"  [FAIL] {s.name}: missing mapped column(s) {s.missing_columns}")
+            reasons = []
+            if s.missing_columns:
+                reasons.append(f"missing mapped column(s) {s.missing_columns}")
+            if s.blank_key_rows:
+                reasons.append(f"{s.blank_key_rows} blank-key row(s)")
+            if s.unparsable_dates:
+                reasons.append(f"{s.unparsable_dates} unparsable date(s)")
+            if s.unknown_state_rows:
+                reasons.append(f"{s.unknown_state_rows} unknown-state row(s)")
+            if s.empty_not_allowed:
+                reasons.append("empty population is not allowed")
+            print(f"  [FAIL] {s.name}: {'; '.join(reasons)}")
             continue
         flags = []
         if s.blank_key_rows:
@@ -138,12 +165,15 @@ def write_summary_json(
     path: str,
     system_owners: dict | None = None,
     integrity: list | None = None,
+    control: dict | None = None,
+    rule_responses: dict | None = None,
 ) -> str:
     """Machine-readable run summary for downstream automation (issues, alerts)."""
     findings = _sorted(result.findings)
     owners = system_owners or {}
     payload = {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
+        "control": control or {},
         "sla_days": sla_days,
         "input_valid": result.input_valid,
         "input_integrity": [s.as_dict() for s in (integrity or [])],
@@ -158,7 +188,11 @@ def write_summary_json(
         "counts_by_severity": _severity_counts(findings),
         "owners_to_notify": _owners_to_notify(findings, owners),
         "findings": [
-            {**f.as_row(), "owner": owners.get(f.system, "")} for f in findings
+            {
+                **_finding_row(f, rule_responses),
+                "owner": owners.get(f.system, ""),
+            }
+            for f in findings
         ],
     }
     with open(path, "w", encoding="utf-8") as fh:
@@ -170,6 +204,8 @@ def render_markdown_summary(
     result: ReviewResult,
     sla_days: int,
     system_owners: dict | None = None,
+    control: dict | None = None,
+    rule_responses: dict | None = None,
 ) -> str:
     """Markdown body for a GitHub issue or chat notification."""
     findings = _sorted(result.findings)
@@ -178,7 +214,7 @@ def render_markdown_summary(
     stamp = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     lines = [
-        f"**Termination access review — {stamp}**",
+        f"**{(control or {}).get('name', 'Termination access review')} — {stamp}**",
         "",
         f"- Terminated reviewed: {result.terminated_count}",
         f"- Accounts ingested: {result.account_count}",
@@ -207,4 +243,15 @@ def render_markdown_summary(
             f"| {f.severity.value} | {f.rule} | {f.employee.full_name} "
             f"| {f.system} | {owner} | {detail} |"
         )
+        response = _response_for(f, rule_responses)
+        if response:
+            lines += [
+                "",
+                f"**{f.finding_id} — required response**",
+                f"- Remediation: {response.get('remediation', '')}",
+                f"- Mitigation/lookback: {response.get('mitigation', '')}",
+                f"- Root cause: {response.get('root_cause', '')}",
+                f"- Closure evidence: {response.get('closure_evidence', '')}",
+                f"- Escalation: {response.get('escalation', '')}",
+            ]
     return "\n".join(lines)

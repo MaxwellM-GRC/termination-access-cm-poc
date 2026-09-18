@@ -55,8 +55,9 @@ they support the audit conclusion.
   commit SHA, `config.yaml`, and the extracts lets an auditor re-perform the run
   and obtain identical results.
 - **Evidence integrity.** Each run's log and summary are retained as a timestamped
-  artifact, and the exception issue provides an independent, timestamped record
-  of when each exception was raised, routed, escalated, and closed.
+  artifact. Each actionable finding has a stable ID and a dedicated exception
+  case, which provides an independent, timestamped record of assignment,
+  remediation, escalation, closure, and recurrence.
 
 ## 3. Change management over the control
 
@@ -99,9 +100,9 @@ hardening a production deployment would add.
 | ITAC category | In this repository | Production hardening |
 |---------------|--------------------|----------------------|
 | Input controls | Automated edit checks in `integrity.py`: mapped-column presence (fail-closed), row counts, blank-key and unparsable-date flags; unmatched identities flagged, not dropped | Reject-and-log per row on schema violations; automated row-count reconciliation to source at ingest |
-| Processing controls | Deterministic identity correlation (email, then name with name-only flagged); rule evaluation R1 to R4; SLA computed from termination date; deterministic severity assignment; no manual intervention in the calculation | Governed canonical identity mapping for collisions, shared, and service accounts |
+| Processing controls | Deterministic identity correlation (email, then name with name-only flagged); rule evaluation R1 to R4; termination-type SLA selection; deterministic severity assignment; no manual intervention in the calculation | Governed canonical identity mapping for collisions, shared, and service accounts; timestamp precision where policy requires intraday removal |
 | Output controls | Count reconciliation (findings equal log rows equal severity sum); full-population processing with no sampling; retained, timestamped evidence | Immutable evidence store with retention policy; hash of each artifact |
-| Configuration and parameter controls | Business parameters (de-provisioning SLA, remediation SLA, mappings, status vocab, owners, escalation contact) externalized to `config.yaml` and change-controlled; segregated from code | Parameter change approvals tied to the change-management workflow above |
+| Configuration and parameter controls | RCM metadata, business parameters (de-provisioning SLA, termination-type SLAs, rule responses, remediation SLA, mappings, status vocabulary, owners, escalation contact) externalized to `config.yaml` and change-controlled; segregated from code | Parameter change approvals tied to the change-management workflow above |
 | Interface and data-transfer controls | Out of scope for the POC (static CSVs) | Authenticated, least-privilege extract generation; integrity of the extract in transit; run timestamp and row counts captured |
 
 ## 5. Auditor reliance posture

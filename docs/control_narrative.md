@@ -53,12 +53,21 @@ On a defined cadence, the reviewer:
   (terminated reviewed, accounts ingested, identities correlated, unmatched).
 - **Configuration** (`config.yaml`): documents the SLA and the exact field/status
   mapping used for the run, so the test is reproducible.
-- **Exception queue** (continuous-monitoring mode): each scheduled run with
-  actionable findings uploads its log/summary as a retained artifact and records
-  the exceptions on a rolling GitHub Issue, routed to the owning system's admin.
-  Issues left open past the remediation SLA are aged and escalated to the control
-  owner, giving a timestamped trail from detection through assignment,
-  escalation, and closure.
+- **Exception cases** (continuous-monitoring mode): each actionable finding has
+  a stable finding ID and a dedicated GitHub Issue. The case includes the owner,
+  prescribed response, aging, and closure-evidence checklist, so it can be
+  reopened on recurrence and audited from detection through closure.
+
+## Default exception response
+
+The control detects exceptions automatically but does not disable production
+accounts. Each finding is issued with an RCM-ready, human-led response: required
+remediation, mitigation/lookback procedure, root-cause prompt, closure evidence,
+and escalation condition. For example, an active account is disabled promptly
+and its post-termination activity is reviewed; post-termination activity also
+requires a transactional-risk assessment where the role could affect financial
+reporting. The current response policy is versioned in `config.yaml` under
+`rule_responses`.
 
 ## Population completeness
 

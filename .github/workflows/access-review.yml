@@ -7,7 +7,8 @@ name: Access Review (Continuous Monitoring)
 #
 # Notification chain when critical/high findings are present:
 #   1. Exception log + summary uploaded as a downloadable run artifact (evidence)
-#   2. A rolling GitHub Issue (label: access-exception) is opened or commented on
+#   2. A stable GitHub Issue is maintained for each actionable finding, so its
+#      owner, aging, response evidence, and closure can be audited individually
 #   3. Optional Slack message if the SLACK_WEBHOOK_URL secret is configured
 #   4. The job fails, triggering GitHub's built-in email to the repo owner
 
@@ -75,55 +76,102 @@ jobs:
           print(f"count={actionable}")
           PY
 
-      - name: Open or update exception issue
+      - name: Open or update individual exception cases
         if: always() && steps.check.outputs.actionable == 'true' && github.event_name != 'pull_request'
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const body = fs.readFileSync('issue_body.md', 'utf8');
             const summary = JSON.parse(fs.readFileSync('summary.json', 'utf8'));
             const label = 'access-exception';
+            const caseLabel = 'access-exception-case';
             const { owner, repo } = context.repo;
 
-            // Owners are configured per system as @user or @org/team. Only plain
-            // @user handles that are repo collaborators can be assignees; the
-            // @mentions in the issue body notify everyone either way. Assignment
-            // is attempted separately and best-effort, so an unknown handle (e.g.
-            // a placeholder) can never block the issue itself.
-            const assignees = (summary.owners_to_notify || [])
-              .map(o => o.owner)
-              .filter(h => h && h.startsWith('@') && !h.includes('/'))
-              .map(h => h.slice(1));
-
-            async function tryAssign(issue_number) {
-              if (!assignees.length) return;
+            async function ensureLabel(name, color, description) {
               try {
-                await github.rest.issues.addAssignees({ owner, repo, issue_number, assignees });
+                await github.rest.issues.getLabel({ owner, repo, name });
               } catch (e) {
-                core.warning(`Could not assign ${assignees.join(', ')}: ${e.message}`);
+                await github.rest.issues.createLabel({ owner, repo, name, color, description });
+              }
+            }
+            await ensureLabel(label, 'd73a4a', 'Automated access-control exception');
+            await ensureLabel(caseLabel, 'b60205', 'Individual automated access-control exception case');
+
+            const cases = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'all', labels: caseLabel, per_page: 100,
+            });
+
+            async function tryAssign(issueNumber, handle) {
+              if (!handle || !handle.startsWith('@') || handle.includes('/')) return;
+              try {
+                await github.rest.issues.addAssignees({
+                  owner, repo, issue_number: issueNumber, assignees: [handle.slice(1)],
+                });
+              } catch (e) {
+                core.warning(`Could not assign ${handle}: ${e.message}`);
               }
             }
 
-            const existing = await github.rest.issues.listForRepo({
-              owner, repo, state: 'open', labels: label, per_page: 1,
-            });
+            function bodyFor(finding) {
+              const r = finding;
+              return [
+                `<!-- finding-id:${r.finding_id} -->`,
+                `# Access exception: ${r.rule}`,
+                '',
+                `- **Finding ID:** \`${r.finding_id}\``,
+                `- **Severity:** ${r.severity}`,
+                `- **System:** ${r.system}`,
+                `- **Account:** ${r.account_id}`,
+                `- **Employee ID:** ${r.employee_id}`,
+                `- **Termination date:** ${r.termination_date}`,
+                `- **Owner:** ${r.owner || 'Unassigned'}`,
+                '',
+                '## Detection detail',
+                r.detail,
+                '',
+                '## Required response',
+                `- [ ] **Remediation:** ${r.remediation || 'Document corrective action.'}`,
+                `- [ ] **Mitigation/lookback:** ${r.mitigation || 'Assess exposure.'}`,
+                `- [ ] **Root cause:** ${r.root_cause || 'Document root cause.'}`,
+                `- [ ] **Closure evidence:** ${r.closure_evidence || 'Attach closure evidence.'}`,
+                `- **Escalation:** ${r.escalation || 'Follow the remediation SLA.'}`,
+                '',
+                'Close this case only after all applicable response evidence is retained.',
+              ].join('\n');
+            }
 
-            if (existing.data.length) {
-              const number = existing.data[0].number;
-              await github.rest.issues.createComment({ owner, repo, issue_number: number, body });
-              await tryAssign(number);
-              core.info(`Commented on existing exception issue #${number}`);
-            } else {
-              const today = new Date().toISOString().slice(0, 10);
-              const res = await github.rest.issues.create({
-                owner, repo,
-                title: `Access exceptions detected (${today})`,
-                body,
-                labels: [label],
-              });
-              await tryAssign(res.data.number);
-              core.info(`Opened exception issue #${res.data.number}`);
+            const actionable = summary.findings.filter(f =>
+              ['critical', 'high'].includes(f.severity)
+            );
+            for (const finding of actionable) {
+              const marker = `<!-- finding-id:${finding.finding_id} -->`;
+              const existing = cases.find(issue => (issue.body || '').includes(marker));
+              const body = bodyFor(finding);
+              let number;
+              if (existing) {
+                number = existing.number;
+                if (existing.state === 'closed') {
+                  await github.rest.issues.update({ owner, repo, issue_number: number, state: 'open' });
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: number,
+                    body: `Finding recurred in run ${context.runId}; reopening this case.`,
+                  });
+                } else {
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: number,
+                    body: `Finding remains open in run ${context.runId}. See the retained workflow evidence for the current observation.`,
+                  });
+                }
+              } else {
+                const res = await github.rest.issues.create({
+                  owner, repo,
+                  title: `[Access Exception] ${finding.rule} — ${finding.system} — ${finding.employee_id}`,
+                  body,
+                  labels: [label, caseLabel],
+                });
+                number = res.data.number;
+              }
+              await tryAssign(number, finding.owner);
+              core.info(`Maintained exception case #${number} for ${finding.finding_id}`);
             }
 
       - name: Notify Slack
@@ -137,7 +185,7 @@ jobs:
           import json, sys
           count, url = sys.argv[1], sys.argv[2]
           text = (f":rotating_light: Termination access review found {count} "
-                  f"actionable exception(s) (critical/high).\n{url}")
+                  f"actionable exception case(s) (critical/high).\n{url}")
           print(json.dumps({"text": text}))
           PY
           )

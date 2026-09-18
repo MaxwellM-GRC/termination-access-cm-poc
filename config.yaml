@@ -5,9 +5,63 @@
 # values were mapped into the normalized model. Change the mapping, not the code,
 # when you onboard a new extract.
 
+# RCM-ready control metadata. Keep policy language and the technical parameters
+# together so each review run can identify precisely what control was executed.
+control:
+  id: ITGC-AD-001
+  name: Timely Termination Access Deprovisioning
+  frequency: Daily
+  owner: "@grc-control-owner"
+  risk: >-
+    Terminated personnel or contractors could retain access to in-scope systems
+    and initiate unauthorized activity, alter financial data, or access
+    sensitive information.
+  objective: >-
+    Access for terminated workforce members is removed from in-scope systems
+    within policy-defined timeframes.
+  activity: >-
+    Reconcile the authoritative HR termination population to active and disabled
+    accounts across every in-scope system and route each validated exception for
+    human-approved remediation.
+
 # De-provisioning SLA in calendar days from termination date. Access still
 # enabled, or disabled after this window, is a deficiency. Tune per your policy.
 deprovisioning_sla_days: 7
+
+# Termination types with a stricter, approved SLA. Types not listed use the
+# default above. Production deployment should use timestamps where policy
+# requires immediate or intraday action.
+termination_type_sla_days:
+  Involuntary: 0
+
+# Default human-led response for each named rule. These values are attached to
+# the exception evidence and GitHub case; they do not authorize automated
+# account changes.
+rule_responses:
+  R1_OPEN_ACCESS:
+    remediation: Disable confirmed residual access immediately; rotate known shared, service, or privileged credentials when applicable.
+    mitigation: Review post-termination activity and financially relevant transactions during the exposure period, prioritizing privileged roles.
+    root_cause: Determine whether the cause was an HR feed delay, workflow/configuration failure, local account, incomplete system inventory, or manual-process breakdown.
+    closure_evidence: Account state before and after, removal timestamp, remediator, lookback conclusion, and credential-rotation evidence where applicable.
+    escalation: Immediate for privileged access; otherwise when the remediation SLA is breached.
+  R2_LATE_DEPROVISION:
+    remediation: Confirm access is disabled and document the effective deprovisioning date.
+    mitigation: Review activity and financially relevant transactions from termination through deprovisioning.
+    root_cause: Determine why the termination workflow did not meet the required SLA.
+    closure_evidence: Disabled-account evidence, removal timestamp, lookback conclusion, and root-cause record.
+    escalation: Escalate when the exception remains unresolved past the remediation SLA or indicates a recurring workflow failure.
+  R3_POST_TERM_ACTIVITY:
+    remediation: Disable the account immediately and preserve relevant activity records for investigation.
+    mitigation: Perform activity and transactional analysis for the full exposure period and assess whether unauthorized actions occurred.
+    root_cause: Determine whether access was retained, credentials were shared, an integration account was misidentified, or logging was incomplete.
+    closure_evidence: Account-removal evidence, activity/transaction review, investigation conclusion, and corrective-action record.
+    escalation: Immediate.
+  R4_NAME_ONLY_MATCH:
+    remediation: Confirm or reject the identity linkage using a governed identifier before relying on the account-state conclusion.
+    mitigation: Do not close related access exceptions until identity confirmation is recorded.
+    root_cause: Determine why a canonical employee identifier or reliable email mapping was unavailable.
+    closure_evidence: Identity-mapping decision and supporting source evidence.
+    escalation: Escalate if the identity cannot be confirmed before the review-completion deadline.
 
 # Remediation policy for open exceptions (used by the escalation workflow).
 remediation:
@@ -20,6 +74,9 @@ remediation:
 # HR roster (the source of truth for who was terminated and when).
 hr_source:
   file: data/meridian_hr_terminations.csv
+  # A zero-row termination extract can be legitimate for a defined period; the
+  # production evidence package must still retain its query and source count.
+  allow_empty: true
   fields:
     employee_id: employee_id
     full_name: full_name
@@ -37,6 +94,8 @@ systems:
     # system. Used to @mention and best-effort assign the exception issue.
     owner: "@MaxwellM-GRC"
     file: data/nimbus_crm_accounts.csv
+    # An empty account population is not accepted without investigation.
+    allow_empty: false
     fields:
       account_id: account_id
       username: username
@@ -51,6 +110,7 @@ systems:
   - name: Coranto ERP
     owner: "@MaxwellM-GRC"
     file: data/coranto_erp_accounts.csv
+    allow_empty: false
     fields:
       account_id: login
       username: login
@@ -65,6 +125,7 @@ systems:
   - name: Keystone SSO
     owner: "@MaxwellM-GRC"
     file: data/keystone_sso_accounts.csv
+    allow_empty: false
     fields:
       account_id: user_id
       username: upn

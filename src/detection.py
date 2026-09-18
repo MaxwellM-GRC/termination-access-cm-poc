@@ -105,11 +105,16 @@ def _evaluate_account(
 def evaluate(
     identities: list[CorrelatedIdentity],
     sla_days: int,
+    termination_type_slas: dict[str, int] | None = None,
 ) -> list[Finding]:
+    """Evaluate access using the default SLA or an approved type-specific SLA."""
     findings: list[Finding] = []
     for identity in identities:
+        effective_sla = (termination_type_slas or {}).get(
+            identity.employee.termination_type, sla_days
+        )
         for acct in identity.accounts:
-            findings.extend(_evaluate_account(identity, acct, sla_days, False))
+            findings.extend(_evaluate_account(identity, acct, effective_sla, False))
         for acct in identity.name_only_matches:
-            findings.extend(_evaluate_account(identity, acct, sla_days, True))
+            findings.extend(_evaluate_account(identity, acct, effective_sla, True))
     return findings

@@ -90,12 +90,14 @@ Accounts ingested             : 20
 Identities correlated         : 9
 Terminated w/ no account found: 0
 ------------------------------------------------------------------------
-Findings: 10  (critical 9, high 1, info 0)
+Findings: 14  (critical 9, high 5, info 0)
 ------------------------------------------------------------------------
 [CRITICAL] R1_OPEN_ACCESS       Nadia Farouk   Nimbus CRM
            -> Account 'nfarouk' is still ACTIVE 3 days after termination.
 [CRITICAL] R3_POST_TERM_ACTIVITY Sam Okafor    Coranto ERP
            -> Activity recorded 2026-05-15, after termination on 2026-04-28.
+[HIGH    ] R2_LATE_DEPROVISION  Marcus Lindqvist Coranto ERP [+1d]
+           -> Account disabled 2026-05-03, 1 day(s) past the 0-day SLA deadline.
 [HIGH    ] R2_LATE_DEPROVISION  Grace Chen     Nimbus CRM  [+12d]
            -> Account disabled 2026-05-30, 12 day(s) past the 7-day SLA deadline.
 ```
@@ -131,14 +133,14 @@ notification chain:
 
 1. **Evidence** — the exception log, a JSON summary, and a Markdown report are
    uploaded as a downloadable run artifact.
-2. **Exception queue** — a rolling GitHub Issue (label `access-exception`) is
-   opened, or commented on if one is already open, so exceptions have a
-   timestamped, assignable, closeable record. Each in-scope system has an
-   `owner` in `config.yaml` (a GitHub `@user` or `@org/team`); the issue
-   @mentions and best-effort assigns the owner of whichever system the exception
-   landed in, so a stale CRM account routes to the CRM admin and an SSO gap
-   routes to the IAM admin. (Assignees must be repo collaborators; the @mention
-   notifies anyone, including teams.)
+2. **Individual exception cases** — every actionable finding receives a stable
+   finding ID and its own GitHub Issue (`access-exception-case`). The case
+   records its prescribed remediation, mitigation/lookback, root-cause prompt,
+   closure-evidence checklist, owner, and aging. If a closed finding recurs, its
+   case is reopened. Each in-scope system has an `owner` in `config.yaml` (a
+   GitHub `@user` or `@org/team`); the issue @mentions and best-effort assigns
+   the owner of the affected system. (Assignees must be repo collaborators; an
+   @mention still notifies a team.)
 3. **Chat alert** — an optional Slack message, sent only if you configure a
    `SLACK_WEBHOOK_URL` repository secret (Settings → Secrets and variables →
    Actions). Without the secret this step is skipped, not failed.
@@ -146,11 +148,12 @@ notification chain:
    which triggers GitHub's built-in email to the repo owner for a failed
    scheduled run.
 
-A separate **`escalation.yml`** workflow ages the open exception issues daily. Any
-that stay open past the remediation SLA (`config.yaml` → `remediation.issue_sla_days`)
-get an `escalated` label and a comment tagging the `escalation_owner` (typically
-the control owner above the system admins). This gives the control a full
-exception-aging trail: detection → assignment → escalation.
+A separate **`escalation.yml`** workflow ages each open exception case daily.
+Cases open past the remediation SLA (`config.yaml` →
+`remediation.issue_sla_days`) get an `escalated` label and a comment tagging the
+`escalation_owner` (typically the control owner above the system admins). This
+gives the control a full exception-aging trail: detection → assignment →
+remediation → escalation → closure.
 
 Locally or in another scheduler, the same behavior is driven by flags:
 
@@ -196,7 +199,7 @@ src/
   loaders.py           Read + normalize each extract
   correlation.py       Identity correlation across systems
   detection.py         Control rules R1–R4
-  reporting.py         Console summary, CSV log, JSON + Markdown summaries
+  reporting.py         Console summary, RCM-ready CSV/JSON + case summaries
   main.py              CLI orchestrator (--out / --summary-json / --fail-on)
 tests/                 Unit tests: correlation, rules, integrity, outputs, exit codes
 docs/

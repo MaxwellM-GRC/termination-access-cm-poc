@@ -53,7 +53,7 @@ def test_missing_mapped_column_fails(tmp_path):
 def test_blank_required_key_is_counted(tmp_path):
     path = _write(tmp_path, HEADER + "A1,,Active,,\n")  # blank email
     result = _check(path)
-    assert result.ok
+    assert not result.ok
     assert result.blank_key_rows == 1
 
 
@@ -61,6 +61,35 @@ def test_unparsable_date_is_counted(tmp_path):
     path = _write(tmp_path, HEADER + "A1,a@ex.example,Active,not-a-date,\n")
     result = _check(path)
     assert result.unparsable_dates == 1
+    assert not result.ok
+
+
+def test_unknown_account_state_fails_closed(tmp_path):
+    path = _write(tmp_path, HEADER + "A1,a@ex.example,Pending,,\n")
+    result = check_source(
+        name="Sys",
+        path=path,
+        fields=FIELDS,
+        required_keys=["account_id", "email", "state"],
+        date_keys=["last_activity", "deprovisioned_date"],
+        allowed_state_values={"Active", "Disabled"},
+    )
+    assert result.unknown_state_rows == 1
+    assert not result.ok
+
+
+def test_empty_system_population_can_fail_closed(tmp_path):
+    path = _write(tmp_path, HEADER)
+    result = check_source(
+        name="Sys",
+        path=path,
+        fields=FIELDS,
+        required_keys=["account_id", "email", "state"],
+        date_keys=[],
+        allow_empty=False,
+    )
+    assert result.empty_not_allowed
+    assert not result.ok
 
 
 def test_inputs_ok_aggregates(tmp_path):

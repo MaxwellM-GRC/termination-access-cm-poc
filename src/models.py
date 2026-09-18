@@ -10,6 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date
 from enum import Enum
+from hashlib import sha256
 from typing import Optional
 
 
@@ -67,8 +68,21 @@ class Finding:
     detail: str
     days_late: Optional[int] = None
 
+    @property
+    def finding_id(self) -> str:
+        """Stable identifier for one employee/account/rule exception.
+
+        It deliberately excludes the run date and finding text, so the same
+        unresolved condition can be tracked as one exception case across runs.
+        """
+        source = "|".join(
+            [self.employee.employee_id, self.system, self.account_id, self.rule]
+        )
+        return f"AD-{sha256(source.encode('utf-8')).hexdigest()[:16]}"
+
     def as_row(self) -> dict:
         return {
+            "finding_id": self.finding_id,
             "employee_id": self.employee.employee_id,
             "full_name": self.employee.full_name,
             "department": self.employee.department,

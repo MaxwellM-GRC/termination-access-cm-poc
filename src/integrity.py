@@ -14,9 +14,9 @@ Each source is checked for:
 
 These are lightweight application-level input edit checks (an ITAC concept). They
 surface the condition of the data rather than cleaning it, so the control's
-reliability is transparent instead of assumed. Only missing mapped columns fail
-the run; blank keys and bad dates are reported as data-quality flags because the
-correlation and detection layers already handle them safely per record.
+reliability is transparent instead of assumed. A missing mapped column, blank
+key, unparseable date, unrecognized account state, or unexpectedly empty system
+population fails the run: a clean conclusion cannot be drawn from those inputs.
 """
 
 from __future__ import annotations
@@ -35,11 +35,19 @@ class SourceIntegrity:
     missing_columns: list[str]
     blank_key_rows: int
     unparsable_dates: int
+    unknown_state_rows: int = 0
+    empty_not_allowed: bool = False
 
     @property
     def ok(self) -> bool:
-        """True when the file is structurally usable (no mapped column missing)."""
-        return not self.missing_columns
+        """True only when the population can support a reliable conclusion."""
+        return not (
+            self.missing_columns
+            or self.blank_key_rows
+            or self.unparsable_dates
+            or self.unknown_state_rows
+            or self.empty_not_allowed
+        )
 
     def as_dict(self) -> dict:
         return {
@@ -48,6 +56,8 @@ class SourceIntegrity:
             "missing_columns": self.missing_columns,
             "blank_key_rows": self.blank_key_rows,
             "unparsable_dates": self.unparsable_dates,
+            "unknown_state_rows": self.unknown_state_rows,
+            "empty_not_allowed": self.empty_not_allowed,
             "ok": self.ok,
         }
 
@@ -66,6 +76,8 @@ def check_source(
     fields: dict,
     required_keys: list[str],
     date_keys: list[str],
+    allowed_state_values: set[str] | None = None,
+    allow_empty: bool = True,
 ) -> SourceIntegrity:
     """Inspect one extract. `required_keys` and `date_keys` are logical field
     names (keys of `fields`); the file is read using the mapped column names."""
@@ -84,6 +96,7 @@ def check_source(
         row_count = 0
         blank_key_rows = 0
         unparsable_dates = 0
+        unknown_state_rows = 0
         for row in reader:
             row_count += 1
             if any(not (row.get(fields[k]) or "").strip() for k in required_keys):
@@ -92,8 +105,20 @@ def check_source(
                 value = (row.get(fields[dk]) or "").strip()
                 if value and not _is_valid_date(value):
                     unparsable_dates += 1
+            if allowed_state_values is not None:
+                state = (row.get(fields["state"]) or "").strip()
+                if state not in allowed_state_values:
+                    unknown_state_rows += 1
 
-    return SourceIntegrity(name, row_count, [], blank_key_rows, unparsable_dates)
+    return SourceIntegrity(
+        name,
+        row_count,
+        [],
+        blank_key_rows,
+        unparsable_dates,
+        unknown_state_rows,
+        empty_not_allowed=(row_count == 0 and not allow_empty),
+    )
 
 
 def validate_inputs(cfg: dict) -> list[SourceIntegrity]:
@@ -108,6 +133,7 @@ def validate_inputs(cfg: dict) -> list[SourceIntegrity]:
             fields=hr["fields"],
             required_keys=["employee_id", "full_name", "email", "termination_date"],
             date_keys=["termination_date"],
+            allow_empty=hr.get("allow_empty", True),
         )
     )
 
@@ -117,8 +143,11 @@ def validate_inputs(cfg: dict) -> list[SourceIntegrity]:
                 name=system_cfg["name"],
                 path=system_cfg["file"],
                 fields=system_cfg["fields"],
-                required_keys=["account_id", "email", "state"],
-                date_keys=["last_activity", "deprovisioned_date"],
+            required_keys=["account_id", "email", "state"],
+            date_keys=["last_activity", "deprovisioned_date"],
+            allowed_state_values=set(system_cfg.get("active_values", []))
+            | set(system_cfg.get("disabled_values", [])),
+            allow_empty=system_cfg.get("allow_empty", False),
             )
         )
 

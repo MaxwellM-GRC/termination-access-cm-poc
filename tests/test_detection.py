@@ -89,3 +89,12 @@ def test_post_termination_activity_flagged():
     ids, _ = correlate([_emp()], [acct])
     findings = evaluate(ids, sla_days=7)
     assert "R3_POST_TERM_ACTIVITY" in _rules(findings)
+
+
+def test_termination_type_sla_overrides_default():
+    # Involuntary termination uses the immediate (zero-day) policy rather than
+    # the seven-day default, so a next-day disablement is late.
+    employee = _emp(termination_type="Involuntary")
+    ids, _ = correlate([employee], [_acct(deprovisioned_date=date(2026, 5, 2))])
+    findings = evaluate(ids, sla_days=7, termination_type_slas={"Involuntary": 0})
+    assert "R2_LATE_DEPROVISION" in _rules(findings)

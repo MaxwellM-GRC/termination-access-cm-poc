@@ -65,12 +65,20 @@ def test_exit_code_clean_result_passes():
 
 def test_summary_json_shape(tmp_path):
     path = tmp_path / "summary.json"
-    write_summary_json(_result(Severity.CRITICAL, Severity.HIGH), 7, str(path))
+    control = {"id": "ITGC-AD-001", "name": "Termination Access"}
+    responses = {"R1_OPEN_ACCESS": {"remediation": "Disable access."}}
+    write_summary_json(
+        _result(Severity.CRITICAL, Severity.HIGH), 7, str(path),
+        control=control, rule_responses=responses,
+    )
     data = json.load(open(path))
     assert data["totals"]["findings"] == 2
     assert data["counts_by_severity"]["critical"] == 1
     assert data["counts_by_severity"]["high"] == 1
     assert data["sla_days"] == 7
+    assert data["control"]["id"] == "ITGC-AD-001"
+    assert data["findings"][0]["finding_id"].startswith("AD-")
+    assert data["findings"][0]["remediation"] == "Disable access."
 
 
 def test_markdown_summary_clean_message():
@@ -79,9 +87,13 @@ def test_markdown_summary_clean_message():
 
 
 def test_markdown_summary_lists_findings():
-    md = render_markdown_summary(_result(Severity.CRITICAL), 7)
+    md = render_markdown_summary(
+        _result(Severity.CRITICAL), 7,
+        rule_responses={"R1_OPEN_ACCESS": {"remediation": "Disable access."}},
+    )
     assert "R1_OPEN_ACCESS" in md
     assert "| Severity |" in md
+    assert "required response" in md
 
 
 def test_owner_routing_in_summary_and_markdown(tmp_path):
