@@ -55,14 +55,14 @@ On a defined cadence, the reviewer:
   mapping used for the run, so the test is reproducible.
 - **Exception cases** (continuous-monitoring mode): each actionable finding has
   a stable finding ID and a dedicated GitHub Issue. The case includes the owner,
-  prescribed response, aging, and closure-evidence checklist, so it can be
+  prescribed response, aging, and closure evidence checklist, so it can be
   reopened on recurrence and audited from detection through closure.
 
 ## Default exception response
 
 The control detects exceptions automatically but does not disable production
-accounts. Each finding is issued with an RCM-ready, human-led response: required
-remediation, mitigation/lookback procedure, root-cause prompt, closure evidence,
+accounts. Each finding is issued with an RCM ready, human led response: required
+remediation, mitigation/lookback procedure, root cause prompt, closure evidence,
 and escalation condition. For example, an active account is disabled promptly
 and its post-termination activity is reviewed; post-termination activity also
 requires a transactional-risk assessment where the role could affect financial
@@ -74,7 +74,7 @@ reporting. The current response policy is versioned in `config.yaml` under
 The HR termination roster is the authoritative population. The run summary
 reports how many terminated identities correlated to at least one account and
 lists any that matched none, so completeness of the review can be reconciled and
-manual follow-up scoped.
+manual follow up scoped.
 
 ## Limitations of this POC
 

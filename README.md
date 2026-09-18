@@ -135,8 +135,8 @@ notification chain:
    uploaded as a downloadable run artifact.
 2. **Individual exception cases** — every actionable finding receives a stable
    finding ID and its own GitHub Issue (`access-exception-case`). The case
-   records its prescribed remediation, mitigation/lookback, root-cause prompt,
-   closure-evidence checklist, owner, and aging. If a closed finding recurs, its
+   records its prescribed remediation, mitigation/lookback, root cause prompt,
+   closure evidence checklist, owner, and aging. If a closed finding recurs, its
    case is reopened. Each in-scope system has an `owner` in `config.yaml` (a
    GitHub `@user` or `@org/team`); the issue @mentions and best-effort assigns
    the owner of the affected system. (Assignees must be repo collaborators; an
@@ -199,7 +199,7 @@ src/
   loaders.py           Read + normalize each extract
   correlation.py       Identity correlation across systems
   detection.py         Control rules TA-01–TA-04
-  reporting.py         Console summary, RCM-ready CSV/JSON + case summaries
+  reporting.py         Console summary, RCM ready CSV/JSON + case summaries
   main.py              CLI orchestrator (--out / --summary-json / --fail-on)
 tests/                 Unit tests: correlation, rules, integrity, outputs, exit codes
 docs/

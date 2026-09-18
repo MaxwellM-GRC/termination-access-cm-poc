@@ -5,24 +5,30 @@
 # values were mapped into the normalized model. Change the mapping, not the code,
 # when you onboard a new extract.
 
-# RCM-ready control metadata. Keep policy language and the technical parameters
+# RCM ready control metadata. Keep policy language and the technical parameters
 # together so each review run can identify precisely what control was executed.
 control:
   id: ITGC-AD-001
   name: Timely Termination Access Deprovisioning
+  source_checklist: SOX_Access_Deprovisioning_Checklist.docx
+  risk_category: logical_access
   frequency: Daily
   owner: "@grc-control-owner"
   risk: >-
-    Terminated personnel or contractors could retain access to in-scope systems
-    and initiate unauthorized activity, alter financial data, or access
-    sensitive information.
+    Failure to remove terminated-user access timely could allow former personnel
+    or contractors to access in-scope systems, initiate unauthorized activity,
+    alter financial data, or access sensitive information.
+  control_description: >-
+    Management performs a daily reconciliation of terminated personnel to
+    in-scope account populations and investigates or remediates residual,
+    late-removed, or post-termination access.
   objective: >-
     Access for terminated workforce members is removed from in-scope systems
     within policy-defined timeframes.
   activity: >-
     Reconcile the authoritative HR termination population to active and disabled
     accounts across every in-scope system and route each validated exception for
-    human-approved remediation.
+    human approved remediation.
 
 # De-provisioning SLA in calendar days from termination date. Access still
 # enabled, or disabled after this window, is a deficiency. Tune per your policy.
@@ -34,7 +40,7 @@ deprovisioning_sla_days: 7
 termination_type_sla_days:
   Involuntary: 0
 
-# Default human-led response for each named rule. These values are attached to
+# Default human led response for each named rule. These values are attached to
 # the exception evidence and GitHub case; they do not authorize automated
 # account changes.
 rule_responses:
@@ -48,7 +54,7 @@ rule_responses:
     remediation: Confirm access is disabled and document the effective deprovisioning date.
     mitigation: Review activity and financially relevant transactions from termination through deprovisioning.
     root_cause: Determine why the termination workflow did not meet the required SLA.
-    closure_evidence: Disabled-account evidence, removal timestamp, lookback conclusion, and root-cause record.
+    closure_evidence: Disabled account evidence, removal timestamp, lookback conclusion, and root cause record.
     escalation: Escalate when the exception remains unresolved past the remediation SLA or indicates a recurring workflow failure.
   TA-03:
     remediation: Disable the account immediately and preserve relevant activity records for investigation.
