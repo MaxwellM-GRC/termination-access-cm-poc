@@ -67,8 +67,10 @@ def test_summary_json_shape(tmp_path):
     path = tmp_path / "summary.json"
     control = {"id": "ITGC-AD-001", "name": "Termination Access"}
     responses = {"R1_OPEN_ACCESS": {"remediation": "Disable access."}}
+    result = _result(Severity.CRITICAL, Severity.HIGH)
+    result.run_id = "AD-20260917T010203Z"
     write_summary_json(
-        _result(Severity.CRITICAL, Severity.HIGH), 7, str(path),
+        result, 7, str(path),
         control=control, rule_responses=responses,
     )
     data = json.load(open(path))
@@ -76,6 +78,7 @@ def test_summary_json_shape(tmp_path):
     assert data["counts_by_severity"]["critical"] == 1
     assert data["counts_by_severity"]["high"] == 1
     assert data["sla_days"] == 7
+    assert data["run_id"] == "AD-20260917T010203Z"
     assert data["control"]["id"] == "ITGC-AD-001"
     assert data["findings"][0]["finding_id"].startswith("AD-")
     assert data["findings"][0]["remediation"] == "Disable access."

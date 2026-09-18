@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import sys
+from datetime import datetime, timezone
 
 import yaml
 
@@ -52,6 +53,7 @@ def run(
     termination_type_slas = cfg.get("termination_type_sla_days", {})
     control = cfg.get("control", {})
     rule_responses = cfg.get("rule_responses", {})
+    run_id = f"AD-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
 
     system_owners = {
         s["name"]: s["owner"] for s in cfg["systems"] if s.get("owner")
@@ -65,7 +67,7 @@ def run(
         # A mapped column is missing, so the extract is mis-shaped and the output
         # cannot be trusted. Record the failure and stop: a control must never
         # report "clean" on inputs it was unable to validate.
-        result = ReviewResult(input_valid=False)
+        result = ReviewResult(input_valid=False, run_id=run_id)
         if summary_json_path:
             reporting.write_summary_json(
                 result, sla_days, summary_json_path, system_owners, input_checks,
@@ -91,12 +93,15 @@ def run(
         account_count=len(accounts),
         matched_identities=len(identities),
         unmatched_employees=unmatched,
+        run_id=run_id,
     )
 
     reporting.print_summary(result)
 
     if out_path:
-        path = reporting.write_exception_log(findings, out_path, rule_responses)
+        path = reporting.write_exception_log(
+            findings, out_path, rule_responses, result.run_id
+        )
         print(f"\nException log written to: {path}")
 
     if summary_json_path:

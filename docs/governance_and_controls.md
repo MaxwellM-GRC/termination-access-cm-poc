@@ -12,6 +12,16 @@ population) and one account extract per in-scope system. Because a conclusion is
 drawn from these, they are Information Produced by the Entity (IPE) and must be
 complete and accurate for the control to be relied upon.
 
+### Source provenance contract
+
+Every source-integrity record in the JSON evidence package includes the source
+reference, source-system and report/query metadata, configured parameters,
+observed-at timestamp, row count, and SHA-256 content hash. The run ID appears
+on the run summary and every exception-log row. Later API adapters (for example
+Workday, Okta, Entra, GitHub, or GitLab) can populate the same fields with their
+API endpoint, request parameters, extraction timestamp, record count, and
+retained-response hash.
+
 | Input | Role | Completeness and accuracy evidence |
 |-------|------|------------------------------------|
 | HR termination roster | Authoritative population of terminated workers for the period | Date-bounded extract with the query parameters and run timestamp retained; row count reconciled to the HRIS termination report; no post-extract filtering that removes rows |

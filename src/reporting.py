@@ -23,6 +23,7 @@ _SEVERITY_ORDER = {
 }
 
 _COLUMNS = [
+    "run_id",
     "finding_id",
     "employee_id",
     "full_name",
@@ -51,18 +52,25 @@ def _response_for(finding: Finding, rule_responses: dict | None) -> dict:
     return (rule_responses or {}).get(finding.rule, {})
 
 
-def _finding_row(finding: Finding, rule_responses: dict | None) -> dict:
-    return {**finding.as_row(), **_response_for(finding, rule_responses)}
+def _finding_row(
+    finding: Finding, rule_responses: dict | None, run_id: str = ""
+) -> dict:
+    return {
+        "run_id": run_id,
+        **finding.as_row(),
+        **_response_for(finding, rule_responses),
+    }
 
 
 def write_exception_log(
-    findings: list[Finding], path: str, rule_responses: dict | None = None
+    findings: list[Finding], path: str, rule_responses: dict | None = None,
+    run_id: str = "",
 ) -> str:
     with open(path, "w", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=_COLUMNS)
         writer.writeheader()
         for finding in _sorted(findings):
-            writer.writerow(_finding_row(finding, rule_responses))
+            writer.writerow(_finding_row(finding, rule_responses, run_id))
     return path
 
 
@@ -172,6 +180,7 @@ def write_summary_json(
     findings = _sorted(result.findings)
     owners = system_owners or {}
     payload = {
+        "run_id": result.run_id,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "control": control or {},
         "sla_days": sla_days,
@@ -189,7 +198,7 @@ def write_summary_json(
         "owners_to_notify": _owners_to_notify(findings, owners),
         "findings": [
             {
-                **_finding_row(f, rule_responses),
+                **_finding_row(f, rule_responses, result.run_id),
                 "owner": owners.get(f.system, ""),
             }
             for f in findings
@@ -216,6 +225,7 @@ def render_markdown_summary(
     lines = [
         f"**{(control or {}).get('name', 'Termination access review')} — {stamp}**",
         "",
+        f"- Run ID: `{result.run_id}`",
         f"- Terminated reviewed: {result.terminated_count}",
         f"- Accounts ingested: {result.account_count}",
         f"- SLA: {sla_days} days",

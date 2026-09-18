@@ -77,6 +77,13 @@ hr_source:
   # A zero-row termination extract can be legitimate for a defined period; the
   # production evidence package must still retain its query and source count.
   allow_empty: true
+  provenance:
+    source_system: Meridian HR
+    source_type: governed_csv_export
+    report_or_query: Termination roster
+    parameters:
+      employment_status: Terminated
+      review_window: policy_defined
   fields:
     employee_id: employee_id
     full_name: full_name
@@ -96,6 +103,12 @@ systems:
     file: data/nimbus_crm_accounts.csv
     # An empty account population is not accepted without investigation.
     allow_empty: false
+    provenance:
+      source_system: Nimbus CRM
+      source_type: governed_csv_export
+      report_or_query: Complete account listing
+      parameters:
+        include_account_states: [Active, Disabled]
     fields:
       account_id: account_id
       username: username
@@ -111,6 +124,12 @@ systems:
     owner: "@MaxwellM-GRC"
     file: data/coranto_erp_accounts.csv
     allow_empty: false
+    provenance:
+      source_system: Coranto ERP
+      source_type: governed_csv_export
+      report_or_query: Complete account listing
+      parameters:
+        include_account_states: [Active, Inactive]
     fields:
       account_id: login
       username: login
@@ -126,6 +145,12 @@ systems:
     owner: "@MaxwellM-GRC"
     file: data/keystone_sso_accounts.csv
     allow_empty: false
+    provenance:
+      source_system: Keystone SSO
+      source_type: governed_csv_export
+      report_or_query: Complete account listing
+      parameters:
+        include_account_states: [Enabled, Disabled]
     fields:
       account_id: user_id
       username: upn

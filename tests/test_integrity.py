@@ -40,6 +40,23 @@ def test_clean_source_passes(tmp_path):
     assert result.unparsable_dates == 0
 
 
+def test_source_provenance_includes_content_hash(tmp_path):
+    path = _write(tmp_path, HEADER + "A1,a@ex.example,Active,2026-05-01,\n")
+    result = check_source(
+        name="Sys",
+        path=path,
+        fields=FIELDS,
+        required_keys=["account_id", "email", "state"],
+        date_keys=["last_activity", "deprovisioned_date"],
+        provenance={"source_system": "Test System", "report_or_query": "Accounts"},
+    )
+    evidence = result.as_dict()
+    assert evidence["source_reference"] == path
+    assert len(evidence["source_sha256"]) == 64
+    assert evidence["observed_at"]
+    assert evidence["provenance"]["source_system"] == "Test System"
+
+
 def test_missing_mapped_column_fails(tmp_path):
     # Drop the 'status' column that config maps to `state`.
     path = _write(tmp_path, "account_id,email,last_login,disabled_date\nA1,a@ex.example,,\n")

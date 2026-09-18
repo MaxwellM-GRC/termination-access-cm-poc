@@ -24,6 +24,8 @@ from __future__ import annotations
 import csv
 from dataclasses import dataclass
 from datetime import datetime
+from hashlib import sha256
+from pathlib import Path
 
 
 @dataclass
@@ -37,6 +39,10 @@ class SourceIntegrity:
     unparsable_dates: int
     unknown_state_rows: int = 0
     empty_not_allowed: bool = False
+    source_reference: str = ""
+    source_sha256: str = ""
+    observed_at: str = ""
+    provenance: dict | None = None
 
     @property
     def ok(self) -> bool:
@@ -58,6 +64,10 @@ class SourceIntegrity:
             "unparsable_dates": self.unparsable_dates,
             "unknown_state_rows": self.unknown_state_rows,
             "empty_not_allowed": self.empty_not_allowed,
+            "source_reference": self.source_reference,
+            "source_sha256": self.source_sha256,
+            "observed_at": self.observed_at,
+            "provenance": self.provenance or {},
             "ok": self.ok,
         }
 
@@ -78,9 +88,13 @@ def check_source(
     date_keys: list[str],
     allowed_state_values: set[str] | None = None,
     allow_empty: bool = True,
+    provenance: dict | None = None,
 ) -> SourceIntegrity:
     """Inspect one extract. `required_keys` and `date_keys` are logical field
     names (keys of `fields`); the file is read using the mapped column names."""
+    source_path = Path(path)
+    source_hash = sha256(source_path.read_bytes()).hexdigest()
+    observed_at = datetime.now().isoformat(timespec="seconds")
     with open(path, newline="", encoding="utf-8") as fh:
         reader = csv.DictReader(fh)
         header = reader.fieldnames or []
@@ -91,7 +105,11 @@ def check_source(
         )
         if missing:
             # Cannot trust counts from a mis-shaped file; stop at the schema check.
-            return SourceIntegrity(name, 0, missing, 0, 0)
+            return SourceIntegrity(
+                name, 0, missing, 0, 0,
+                source_reference=str(source_path), source_sha256=source_hash,
+                observed_at=observed_at, provenance=provenance,
+            )
 
         row_count = 0
         blank_key_rows = 0
@@ -118,6 +136,10 @@ def check_source(
         unparsable_dates,
         unknown_state_rows,
         empty_not_allowed=(row_count == 0 and not allow_empty),
+        source_reference=str(source_path),
+        source_sha256=source_hash,
+        observed_at=observed_at,
+        provenance=provenance,
     )
 
 
@@ -134,6 +156,7 @@ def validate_inputs(cfg: dict) -> list[SourceIntegrity]:
             required_keys=["employee_id", "full_name", "email", "termination_date"],
             date_keys=["termination_date"],
             allow_empty=hr.get("allow_empty", True),
+            provenance=hr.get("provenance", {}),
         )
     )
 
@@ -148,6 +171,7 @@ def validate_inputs(cfg: dict) -> list[SourceIntegrity]:
             allowed_state_values=set(system_cfg.get("active_values", []))
             | set(system_cfg.get("disabled_values", [])),
             allow_empty=system_cfg.get("allow_empty", False),
+            provenance=system_cfg.get("provenance", {}),
             )
         )
 

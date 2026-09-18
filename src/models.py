@@ -108,6 +108,9 @@ class ReviewResult:
     unmatched_employees: list[TerminatedEmployee] = field(default_factory=list)
     # False when input integrity checks failed and the review was not run.
     input_valid: bool = True
+    # One immutable identifier ties the source provenance, findings, evidence,
+    # and exception cases produced by a single control execution together.
+    run_id: str = ""
 
     @property
     def population_reconciled(self) -> bool:
