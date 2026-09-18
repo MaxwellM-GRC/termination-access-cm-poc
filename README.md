@@ -37,7 +37,7 @@ Only correlating identities across all three systems surfaces both.
 
 ## What this control tests
 
-| Control | Control description | Severity |
+| Control ID | Control description | Severity |
 |---------|---------------------|----------|
 | TA-01 | Confirm access was removed. Flags an account still active after termination. | Critical |
 | TA-02 | Confirm access was removed on time. Flags an account disabled after the allowed deadline. | High |
