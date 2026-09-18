@@ -39,17 +39,17 @@ Only correlating identities across all three systems surfaces both.
 
 | Control | Control description | Severity |
 |---------|---------------------|----------|
-| R1 | Confirm access was removed. Flags an account still active after termination. | Critical |
-| R2 | Confirm access was removed on time. Flags an account disabled after the allowed deadline. | High |
-| R3 | Confirm there was no use after termination. Flags activity dated after the termination date. | Critical |
-| R4 | Confirm the identity match is reliable. Flags an account matched by name only for manual confirmation. | Info |
+| TA-01 | Confirm access was removed. Flags an account still active after termination. | Critical |
+| TA-02 | Confirm access was removed on time. Flags an account disabled after the allowed deadline. | High |
+| TA-03 | Confirm there was no use after termination. Flags activity dated after the termination date. | Critical |
+| TA-04 | Confirm the identity match is reliable. Flags an account matched by name only for manual confirmation. | Info |
 
 ## How it works
 
 ```
 HR roster ─┐
 CRM  ──────┤─►  loaders  ─►  correlation  ─►  detection  ─►  reporting
-ERP  ──────┤   (normalize   (one identity     (R1–R4)       (console +
+ERP  ──────┤   (normalize   (one identity     (TA-01–04)    (console +
 SSO  ──────┘    schemas)     across systems)                 CSV log)
 ```
 
@@ -92,13 +92,13 @@ Terminated w/ no account found: 0
 ------------------------------------------------------------------------
 Findings: 14  (critical 9, high 5, info 0)
 ------------------------------------------------------------------------
-[CRITICAL] R1_OPEN_ACCESS       Nadia Farouk   Nimbus CRM
+[CRITICAL] TA-01                Nadia Farouk   Nimbus CRM
            -> Account 'nfarouk' is still ACTIVE 3 days after termination.
-[CRITICAL] R3_POST_TERM_ACTIVITY Sam Okafor    Coranto ERP
+[CRITICAL] TA-03                Sam Okafor     Coranto ERP
            -> Activity recorded 2026-05-15, after termination on 2026-04-28.
-[HIGH    ] R2_LATE_DEPROVISION  Marcus Lindqvist Coranto ERP [+1d]
+[HIGH    ] TA-02                Marcus Lindqvist Coranto ERP [+1d]
            -> Account disabled 2026-05-03, 1 day(s) past the 0-day SLA deadline.
-[HIGH    ] R2_LATE_DEPROVISION  Grace Chen     Nimbus CRM  [+12d]
+[HIGH    ] TA-02                Grace Chen     Nimbus CRM  [+12d]
            -> Account disabled 2026-05-30, 12 day(s) past the 7-day SLA deadline.
 ```
 
@@ -107,7 +107,7 @@ input extract first and, if a mapped column is missing, aborts before drawing an
 conclusion. Exit codes: `0` clean, `2` actionable findings (with `--fail-on`),
 `3` input validation failed.
 
-> R1 "days active" is measured from the termination date to the run date, so
+> TA-01 "days active" is measured from the termination date to the run date, so
 > those figures grow over time; the sample data is a static snapshot.
 
 The exception log (`exception_log_*.csv`) is one row per finding — the artifact
@@ -198,7 +198,7 @@ src/
   integrity.py         Input edit checks (IPE completeness/accuracy), fail-closed
   loaders.py           Read + normalize each extract
   correlation.py       Identity correlation across systems
-  detection.py         Control rules R1–R4
+  detection.py         Control rules TA-01–TA-04
   reporting.py         Console summary, RCM-ready CSV/JSON + case summaries
   main.py              CLI orchestrator (--out / --summary-json / --fail-on)
 tests/                 Unit tests: correlation, rules, integrity, outputs, exit codes

@@ -38,25 +38,25 @@ termination_type_sla_days:
 # the exception evidence and GitHub case; they do not authorize automated
 # account changes.
 rule_responses:
-  R1_OPEN_ACCESS:
+  TA-01:
     remediation: Disable confirmed residual access immediately; rotate known shared, service, or privileged credentials when applicable.
     mitigation: Review post-termination activity and financially relevant transactions during the exposure period, prioritizing privileged roles.
     root_cause: Determine whether the cause was an HR feed delay, workflow/configuration failure, local account, incomplete system inventory, or manual-process breakdown.
     closure_evidence: Account state before and after, removal timestamp, remediator, lookback conclusion, and credential-rotation evidence where applicable.
     escalation: Immediate for privileged access; otherwise when the remediation SLA is breached.
-  R2_LATE_DEPROVISION:
+  TA-02:
     remediation: Confirm access is disabled and document the effective deprovisioning date.
     mitigation: Review activity and financially relevant transactions from termination through deprovisioning.
     root_cause: Determine why the termination workflow did not meet the required SLA.
     closure_evidence: Disabled-account evidence, removal timestamp, lookback conclusion, and root-cause record.
     escalation: Escalate when the exception remains unresolved past the remediation SLA or indicates a recurring workflow failure.
-  R3_POST_TERM_ACTIVITY:
+  TA-03:
     remediation: Disable the account immediately and preserve relevant activity records for investigation.
     mitigation: Perform activity and transactional analysis for the full exposure period and assess whether unauthorized actions occurred.
     root_cause: Determine whether access was retained, credentials were shared, an integration account was misidentified, or logging was incomplete.
     closure_evidence: Account-removal evidence, activity/transaction review, investigation conclusion, and corrective-action record.
     escalation: Immediate.
-  R4_NAME_ONLY_MATCH:
+  TA-04:
     remediation: Confirm or reject the identity linkage using a governed identifier before relying on the account-state conclusion.
     mitigation: Do not close related access exceptions until identity confirmation is recorded.
     root_cause: Determine why a canonical employee identifier or reliable email mapping was unavailable.

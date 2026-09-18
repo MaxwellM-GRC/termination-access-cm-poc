@@ -30,7 +30,7 @@ def _finding(sev):
         employee=_emp(),
         system="Sys",
         account_id="A1",
-        rule="R1_OPEN_ACCESS",
+        rule="TA-01",
         severity=sev,
         detail="still active",
     )
@@ -66,7 +66,7 @@ def test_exit_code_clean_result_passes():
 def test_summary_json_shape(tmp_path):
     path = tmp_path / "summary.json"
     control = {"id": "ITGC-AD-001", "name": "Termination Access"}
-    responses = {"R1_OPEN_ACCESS": {"remediation": "Disable access."}}
+    responses = {"TA-01": {"remediation": "Disable access."}}
     result = _result(Severity.CRITICAL, Severity.HIGH)
     result.run_id = "AD-20260917T010203Z"
     write_summary_json(
@@ -92,9 +92,9 @@ def test_markdown_summary_clean_message():
 def test_markdown_summary_lists_findings():
     md = render_markdown_summary(
         _result(Severity.CRITICAL), 7,
-        rule_responses={"R1_OPEN_ACCESS": {"remediation": "Disable access."}},
+        rule_responses={"TA-01": {"remediation": "Disable access."}},
     )
-    assert "R1_OPEN_ACCESS" in md
+    assert "TA-01" in md
     assert "| Severity |" in md
     assert "required response" in md
 

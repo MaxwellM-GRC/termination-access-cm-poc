@@ -29,10 +29,10 @@ On a defined cadence, the reviewer:
 
 | Rule | Assertion | Exception raised when | Severity |
 |------|-----------|-----------------------|----------|
-| R1 | Access is removed | Account is still active post-termination | Critical |
-| R2 | Removal is timely | Account disabled after the SLA deadline | High |
-| R3 | No post-term use | Login/activity occurs after termination date | Critical |
-| R4 | Identity is reliable | Account tied to the person by name only | Info |
+| TA-01 | Access is removed | Account is still active post-termination | Critical |
+| TA-02 | Removal is timely | Account disabled after the SLA deadline | High |
+| TA-03 | No post-term use | Login/activity occurs after termination date | Critical |
+| TA-04 | Identity is reliable | Account tied to the person by name only | Info |
 
 ## Framework mapping
 

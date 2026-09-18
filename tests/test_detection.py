@@ -60,20 +60,20 @@ def test_name_only_match_is_flagged():
     acct = _acct(email="different@ex.example")
     ids, _ = correlate([_emp()], [acct])
     findings = evaluate(ids, sla_days=7)
-    assert "R4_NAME_ONLY_MATCH" in _rules(findings)
+    assert "TA-04" in _rules(findings)
 
 
 def test_active_account_is_critical_open_access():
     ids, _ = correlate([_emp()], [_acct(state=AccountState.ACTIVE, deprovisioned_date=None)])
     findings = evaluate(ids, sla_days=7)
-    assert "R1_OPEN_ACCESS" in _rules(findings)
+    assert "TA-01" in _rules(findings)
 
 
 def test_late_deprovision_flagged_and_dated():
     # Term 2026-05-01, SLA 7d -> deadline 2026-05-08; disabled 2026-05-20 = 12 late
     acct = _acct(deprovisioned_date=date(2026, 5, 20))
     ids, _ = correlate([_emp()], [acct])
-    findings = [f for f in evaluate(ids, sla_days=7) if f.rule == "R2_LATE_DEPROVISION"]
+    findings = [f for f in evaluate(ids, sla_days=7) if f.rule == "TA-02"]
     assert findings and findings[0].days_late == 12
 
 
@@ -88,7 +88,7 @@ def test_post_termination_activity_flagged():
     acct = _acct(last_activity=date(2026, 6, 1))
     ids, _ = correlate([_emp()], [acct])
     findings = evaluate(ids, sla_days=7)
-    assert "R3_POST_TERM_ACTIVITY" in _rules(findings)
+    assert "TA-03" in _rules(findings)
 
 
 def test_termination_type_sla_overrides_default():
@@ -97,4 +97,4 @@ def test_termination_type_sla_overrides_default():
     employee = _emp(termination_type="Involuntary")
     ids, _ = correlate([employee], [_acct(deprovisioned_date=date(2026, 5, 2))])
     findings = evaluate(ids, sla_days=7, termination_type_slas={"Involuntary": 0})
-    assert "R2_LATE_DEPROVISION" in _rules(findings)
+    assert "TA-02" in _rules(findings)

@@ -5,10 +5,10 @@ employee's access falls outside policy. Rules are intentionally small and named
 so an auditor can trace every exception back to a specific, testable assertion.
 
 Rules:
-  R1  OPEN_ACCESS          Account still ACTIVE after termination.
-  R2  LATE_DEPROVISION     Account disabled, but after the SLA deadline.
-  R3  POST_TERM_ACTIVITY   Login/activity dated after the termination date.
-  R4  NAME_ONLY_MATCH      Account tied to the person by name alone — needs
+  TA-01  OPEN_ACCESS          Account still ACTIVE after termination.
+  TA-02  LATE_DEPROVISION     Account disabled, but after the SLA deadline.
+  TA-03  POST_TERM_ACTIVITY   Login/activity dated after the termination date.
+  TA-04  NAME_ONLY_MATCH      Account tied to the person by name alone — needs
                            manual confirmation before relying on the result.
 """
 
@@ -36,7 +36,7 @@ def _evaluate_account(
                 employee=emp,
                 system=acct.system,
                 account_id=acct.account_id,
-                rule="R4_NAME_ONLY_MATCH",
+                rule="TA-04",
                 severity=Severity.INFO,
                 detail=(
                     f"Account '{acct.username}' matched to {emp.full_name} by "
@@ -46,14 +46,14 @@ def _evaluate_account(
             )
         )
 
-    # R1: still active after termination — the headline finding.
+    # TA-01: still active after termination — the headline finding.
     if acct.state == AccountState.ACTIVE:
         findings.append(
             Finding(
                 employee=emp,
                 system=acct.system,
                 account_id=acct.account_id,
-                rule="R1_OPEN_ACCESS",
+                rule="TA-01",
                 severity=Severity.CRITICAL,
                 detail=(
                     f"Account '{acct.username}' is still ACTIVE "
@@ -63,7 +63,7 @@ def _evaluate_account(
             )
         )
 
-    # R2: disabled, but late.
+    # TA-02: disabled, but late.
     if acct.state == AccountState.DISABLED and acct.deprovisioned_date:
         if acct.deprovisioned_date > deadline:
             days_late = (acct.deprovisioned_date - deadline).days
@@ -72,7 +72,7 @@ def _evaluate_account(
                     employee=emp,
                     system=acct.system,
                     account_id=acct.account_id,
-                    rule="R2_LATE_DEPROVISION",
+                    rule="TA-02",
                     severity=Severity.HIGH,
                     detail=(
                         f"Account disabled {acct.deprovisioned_date.isoformat()}, "
@@ -83,14 +83,14 @@ def _evaluate_account(
                 )
             )
 
-    # R3: activity after the termination date, regardless of current state.
+    # TA-03: activity after the termination date, regardless of current state.
     if acct.last_activity and acct.last_activity > emp.termination_date:
         findings.append(
             Finding(
                 employee=emp,
                 system=acct.system,
                 account_id=acct.account_id,
-                rule="R3_POST_TERM_ACTIVITY",
+                rule="TA-03",
                 severity=Severity.CRITICAL,
                 detail=(
                     f"Activity recorded {acct.last_activity.isoformat()}, after "

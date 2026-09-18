@@ -40,7 +40,7 @@ Two design features protect input integrity:
   one or more accounts or reported as unmatched (see the run summary counts), so
   no member of the population is silently dropped from the review.
 - **Weak matches are not trusted.** Accounts tied to a person by name only are
-  flagged (rule R4) for manual confirmation rather than being treated as a
+  flagged (control TA-04) for manual confirmation rather than being treated as a
   reliable match, which prevents a false correlation from either raising or
   suppressing a finding.
 
@@ -57,7 +57,7 @@ they support the audit conclusion.
   population, with no sampling. The summary reconciles totals: the findings count
   equals the number of rows in the exception log and equals the sum of the
   per-severity counts.
-- **Accuracy.** Each finding is produced by a named, unit-tested rule (R1 to R4).
+- **Accuracy.** Each finding is produced by a named, unit-tested control (TA-01 to TA-04).
   The test suite asserts rule behavior and the severity-based exit-code logic, so
   the outputs are traceable to tested logic rather than ad hoc calculation.
 - **Reproducibility and re-performance.** The output is a pure function of the
@@ -110,7 +110,7 @@ hardening a production deployment would add.
 | ITAC category | In this repository | Production hardening |
 |---------------|--------------------|----------------------|
 | Input controls | Automated edit checks in `integrity.py`: mapped-column presence (fail-closed), row counts, blank-key and unparsable-date flags; unmatched identities flagged, not dropped | Reject-and-log per row on schema violations; automated row-count reconciliation to source at ingest |
-| Processing controls | Deterministic identity correlation (email, then name with name-only flagged); rule evaluation R1 to R4; termination-type SLA selection; deterministic severity assignment; no manual intervention in the calculation | Governed canonical identity mapping for collisions, shared, and service accounts; timestamp precision where policy requires intraday removal |
+| Processing controls | Deterministic identity correlation (email, then name with name-only flagged); control evaluation TA-01 to TA-04; termination-type SLA selection; deterministic severity assignment; no manual intervention in the calculation | Governed canonical identity mapping for collisions, shared, and service accounts; timestamp precision where policy requires intraday removal |
 | Output controls | Count reconciliation (findings equal log rows equal severity sum); full-population processing with no sampling; retained, timestamped evidence | Immutable evidence store with retention policy; hash of each artifact |
 | Configuration and parameter controls | RCM metadata, business parameters (de-provisioning SLA, termination-type SLAs, rule responses, remediation SLA, mappings, status vocabulary, owners, escalation contact) externalized to `config.yaml` and change-controlled; segregated from code | Parameter change approvals tied to the change-management workflow above |
 | Interface and data-transfer controls | Out of scope for the POC (static CSVs) | Authenticated, least-privilege extract generation; integrity of the extract in transit; run timestamp and row counts captured |
