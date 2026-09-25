@@ -12,9 +12,10 @@ isolation sees a clean IdP and moves on. The standing access in the ERP never
 surfaces.
 
 This POC correlates every terminated identity to its accounts in *all* in-scope
-systems, then tests four assertions and produces an audit-ready exception log. It
-maps to the SOX ITGC over access de-provisioning (PCAOB AS 2201; COBIT DSS05;
-NIST SP 800-53 AC-2).
+systems, then tests four assertions and produces a reviewable exception log with
+supporting evidence. It illustratively aligns with the SOX ITGC over access
+de-provisioning (PCAOB AS 2201; COBIT DSS05; NIST SP 800-53 AC-2); company scope,
+applicability, and reliance require validation.
 
 > ⚠️ **Sanitized.** All system names, people, and data here are fictional
 > (`Acme Foods`, `Meridian HR`, `Nimbus CRM`, `Coranto ERP`, `Keystone SSO`).
@@ -24,9 +25,10 @@ NIST SP 800-53 AC-2).
 
 ## The problem it catches
 
-The three source extracts are intentionally inconsistent — different column
-names, different words for "active" vs "disabled" — because real ones are. Two
-cases in the sample data show why per-system review misses things:
+The HR roster and three account extracts are intentionally inconsistent —
+different column names, different words for "active" vs "disabled" — because
+real ones are. Two cases in the sample data show why per-system review misses
+things:
 
 - **Dana Whitfield** — Keystone SSO was disabled on time, but her **Nimbus CRM**
   account is still active with a login *after* her termination date.
@@ -110,8 +112,9 @@ conclusion. Exit codes: `0` clean, `2` actionable findings (with `--fail-on`),
 > TA-01 "days active" is measured from the termination date to the run date, so
 > those figures grow over time; the sample data is a static snapshot.
 
-The exception log (`exception_log_*.csv`) is one row per finding — the artifact
-you would hand to an external auditor.
+The exception log (`exception_log_*.csv`) is one row per finding and one
+component of the evidence package available for auditor review alongside the
+source validation, configuration, run summary, and human response records.
 
 ## Continuous monitoring
 
@@ -144,9 +147,9 @@ notification chain:
 3. **Chat alert** — an optional Slack message, sent only if you configure a
    `SLACK_WEBHOOK_URL` repository secret (Settings → Secrets and variables →
    Actions). Without the secret this step is skipped, not failed.
-4. **Email** — the monitoring run intentionally exits red on actionable findings,
-   which triggers GitHub's built-in email to the repo owner for a failed
-   scheduled run.
+4. **GitHub notification** — the monitoring run intentionally exits red on
+   actionable findings. It may trigger an email or web notification depending
+   on the recipient's GitHub Actions notification settings.
 
 A separate **`escalation.yml`** workflow ages each open exception case daily.
 Cases open past the remediation SLA (`config.yaml` →
