@@ -36,16 +36,22 @@ On a defined cadence, the reviewer:
 
 ## Framework mapping
 
-| Framework | Reference | Relevance |
-|-----------|-----------|-----------|
-| PCAOB | AS 2201 | ITGC over access supporting reliance on automated controls and system-generated data |
-| COSO | Principle 11 | Selects and develops general controls over technology |
-| COBIT 2019 | DSS05, DSS06 | Managed security services; managed business process controls |
-| NIST SP 800-53 | AC-2 (Account Management) | Disable accounts on termination; review activity |
-| NIST SP 800-53 | CA-7 (Continuous Monitoring) | Ongoing, automated assessment of the access-removal control on a defined cadence |
-| ISO/IEC 27001 | A.5.18 | Access rights removal/adjustment on termination or change |
+The mapping IDs below are governed by the concise
+[`poc_product_profile.md`](poc_product_profile.md). They are illustrative design
+cross references, not a compliance conclusion.
+
+| Mapping ID | Framework | Reference | Relevance |
+|-----------|-----------|-----------|-----------|
+| `MAP-TA-01` | PCAOB and COSO | AS 2201; Principle 11 | ITGC design over access supporting financial-reporting systems |
+| `MAP-TA-02` | COBIT 2019 | DSS05, DSS06 | Managed access and business-process control monitoring |
+| `MAP-TA-03` | NIST SP 800-53 Rev. 5 | AC-2 (Account Management) | Disable accounts on termination and review activity |
+| `MAP-TA-04` | NIST SP 800-53 Rev. 5 | CA-7 (Continuous Monitoring) | Ongoing assessment on a defined cadence |
+| `MAP-TA-05` | ISO/IEC 27001:2022 | A.5.18 | Review and removal or adjustment of access rights |
 
 ## Evidence produced
+
+This evidence supports mappings `MAP-TA-01` through `MAP-TA-05` only to the
+extent described in the product profile.
 
 - **Exception log** (`exception_log_*.csv`): one row per finding — the primary
   evidence artifact. Ties each exception to an employee, system, rule, and date.

@@ -210,6 +210,7 @@ src/
   main.py              CLI orchestrator (--out / --summary-json / --fail-on)
 tests/                 Unit tests: correlation, rules, integrity, outputs, exit codes
 docs/
+  poc_product_profile.md      Five-minute value, framework, risk, proof, and decision review
   control_narrative.md         Control write-up + framework mapping
   governance_and_controls.md   IPE C&A, change management, ITAC considerations
 ```
@@ -219,6 +220,10 @@ docs/
 PCAOB AS 2201 · COSO Principle 11 · COBIT 2019 DSS05/DSS06 ·
 NIST SP 800-53 AC-2 & CA-7 · ISO/IEC 27001 A.5.18. Full narrative in
 [`docs/control_narrative.md`](docs/control_narrative.md).
+
+For a concise review of product value, illustrative framework fit, material
+risks, success metrics, and decisions, see the
+[`docs/poc_product_profile.md`](docs/poc_product_profile.md).
 
 For data-integrity (IPE completeness and accuracy), change management, and ITAC
 considerations, see
@@ -235,7 +240,7 @@ narrative.
 ## Shared terminology
 
 Plain language definitions for shared assurance terms are available in the
-[portfolio glossary](https://github.com/MaxwellM-GRC/grc-control-core/blob/v0.1.1/docs/glossary.md).
+[portfolio glossary](https://github.com/MaxwellM-GRC/grc-control-core/blob/v0.3.0/docs/glossary.md).
 
 ## License
 

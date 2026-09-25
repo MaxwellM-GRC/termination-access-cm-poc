@@ -1,5 +1,9 @@
 # Governance, Data Integrity, and Application Controls
 
+This detailed evidence and governance design supports the illustrative
+framework mappings `MAP-TA-01`, `MAP-TA-02`, `MAP-TA-03`, `MAP-TA-04`, and
+`MAP-TA-05` defined in [`poc_product_profile.md`](poc_product_profile.md).
+
 This note documents how the control governs the completeness and accuracy of the
 information it consumes and produces, how changes to the control are managed, and
 the application controls embedded in it. It is written to support an auditor's
