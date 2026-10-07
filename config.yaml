@@ -12,14 +12,14 @@ control:
   name: Timely Termination Access Deprovisioning
   source_checklist: SOX_Access_Deprovisioning_Checklist.docx
   risk_category: logical_access
-  frequency: Daily
+  frequency: Weekdays (POC demonstration)
   owner: "@grc-control-owner"
   risk: >-
     Failure to remove terminated-user access timely could allow former personnel
     or contractors to access in-scope systems, initiate unauthorized activity,
     alter financial data, or access sensitive information.
   control_description: >-
-    Management performs a daily reconciliation of terminated personnel to
+    Management performs a scheduled reconciliation of terminated personnel to
     in-scope account populations and investigates or remediates residual,
     late-removed, or post-termination access.
   objective: >-

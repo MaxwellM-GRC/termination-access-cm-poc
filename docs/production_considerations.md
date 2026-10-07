@@ -39,6 +39,9 @@ The fail-closed input checks already exist; production strengthens provenance.
 - The exception log contains employee names and access data. Treat it as
   sensitive HR and security data with defined handling, storage, and access
   controls.
+- GitHub Issues, Actions artifacts, and optional chat messages in this public POC
+  are demonstration channels for fictional data only. Route production evidence
+  and cases through approved private services and minimize sensitive fields.
 - The extract-generation identity itself becomes an account auditors will
   scrutinize; scope and monitor it accordingly.
 
@@ -52,12 +55,18 @@ The fail-closed input checks already exist; production strengthens provenance.
   turnaround, and the escalation path as it ages. The escalation logic exists;
   the process around it must be defined and documented.
 - Retain per-run evidence in a durable, access-controlled store with a defined
-  retention period. These are audit artifacts.
+  retention period. Public GitHub Actions artifacts are limited to 90 days and
+  cannot serve as the annual SOX evidence repository.
+- Enforce required remediation evidence, independent approval, segregation of
+  duties, and closure status in the production case platform; GitHub Issues in
+  this POC demonstrate routing but do not enforce those decisions.
 
 ## 5. Change management and validation
 
 - Enforce the CODEOWNERS and branch-protection model with independent reviewers,
   so detection logic and SLAs cannot change without sign-off.
+- Pin reusable workflow actions and production dependencies to reviewed,
+  immutable versions; retain the control code revision in every evidence package.
 - Validate before relying on it: run against a known period and confirm it catches
   the exceptions you already know about without excessive false positives. Retain
   that validation as evidence.

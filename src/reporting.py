@@ -2,7 +2,7 @@
 
 Outputs:
   * A console summary for a quick read of the run.
-  * A timestamped CSV exception log — the artifact you would hand to an auditor.
+  * A timestamped CSV exception log — one component of the review evidence.
   * A JSON summary for downstream automation (issue creation, chat alerts).
   * A Markdown summary suitable for a GitHub issue or notification body.
 """
@@ -24,6 +24,7 @@ _SEVERITY_ORDER = {
 
 _COLUMNS = [
     "run_id",
+    "code_revision",
     "finding_id",
     "employee_id",
     "full_name",
@@ -53,10 +54,14 @@ def _response_for(finding: Finding, rule_responses: dict | None) -> dict:
 
 
 def _finding_row(
-    finding: Finding, rule_responses: dict | None, run_id: str = ""
+    finding: Finding,
+    rule_responses: dict | None,
+    run_id: str = "",
+    code_revision: str = "unrecorded",
 ) -> dict:
     return {
         "run_id": run_id,
+        "code_revision": code_revision,
         **finding.as_row(),
         **_response_for(finding, rule_responses),
     }
@@ -64,13 +69,15 @@ def _finding_row(
 
 def write_exception_log(
     findings: list[Finding], path: str, rule_responses: dict | None = None,
-    run_id: str = "",
+    run_id: str = "", code_revision: str = "unrecorded",
 ) -> str:
     with open(path, "w", newline="", encoding="utf-8") as fh:
         writer = csv.DictWriter(fh, fieldnames=_COLUMNS)
         writer.writeheader()
         for finding in _sorted(findings):
-            writer.writerow(_finding_row(finding, rule_responses, run_id))
+            writer.writerow(
+                _finding_row(finding, rule_responses, run_id, code_revision)
+            )
     return path
 
 
@@ -181,6 +188,7 @@ def write_summary_json(
     owners = system_owners or {}
     payload = {
         "run_id": result.run_id,
+        "code_revision": result.code_revision,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "control": control or {},
         "sla_days": sla_days,
@@ -198,7 +206,9 @@ def write_summary_json(
         "owners_to_notify": _owners_to_notify(findings, owners),
         "findings": [
             {
-                **_finding_row(f, rule_responses, result.run_id),
+                **_finding_row(
+                    f, rule_responses, result.run_id, result.code_revision
+                ),
                 "owner": owners.get(f.system, ""),
             }
             for f in findings
@@ -226,6 +236,7 @@ def render_markdown_summary(
         f"**{(control or {}).get('name', 'Termination access review')} — {stamp}**",
         "",
         f"- Run ID: `{result.run_id}`",
+        f"- Code revision: `{result.code_revision}`",
         f"- Terminated reviewed: {result.terminated_count}",
         f"- Accounts ingested: {result.account_count}",
         f"- SLA: {sla_days} days",

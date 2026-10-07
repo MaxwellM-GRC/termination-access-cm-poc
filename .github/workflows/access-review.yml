@@ -2,15 +2,15 @@ name: Access Review (Continuous Monitoring)
 
 # Runs the termination access review on a cadence and raises notifications when
 # actionable exceptions (critical/high) are found. This workflow is EXPECTED to
-# go red when exceptions exist -- that red scheduled run is itself the alert:
-# GitHub emails the repo owner when a scheduled run on the default branch fails.
+# go red when exceptions exist. A red run can also indicate an execution or
+# evidence-integrity failure and must be triaged from the run summary.
 #
 # Notification chain when critical/high findings are present:
 #   1. Exception log + summary uploaded as a downloadable run artifact (evidence)
 #   2. A stable GitHub Issue is maintained for each actionable finding, so its
 #      owner, aging, response evidence, and closure can be audited individually
 #   3. Optional Slack message if the SLACK_WEBHOOK_URL secret is configured
-#   4. The job fails, triggering GitHub's built-in email to the repo owner
+#   4. The job fails, triggering configured GitHub web or email notifications
 
 on:
   schedule:
@@ -28,10 +28,10 @@ jobs:
   access-review:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: "3.12"
 
@@ -45,6 +45,8 @@ jobs:
         # Do not stop the job on a non-zero exit; later steps handle evidence and
         # alerting, then a final step re-asserts failure so the run goes red.
         continue-on-error: true
+        env:
+          CONTROL_CODE_REVISION: ${{ github.sha }}
         run: |
           python -m src.main \
             --out exception_log.csv \
@@ -54,7 +56,7 @@ jobs:
 
       - name: Upload review evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: access-review-${{ github.run_id }}
           path: |
@@ -62,6 +64,7 @@ jobs:
             summary.json
             issue_body.md
           if-no-files-found: warn
+          retention-days: 90
 
       - name: Evaluate findings
         id: check
@@ -71,14 +74,16 @@ jobs:
           import json
           d = json.load(open("summary.json"))
           c = d["counts_by_severity"]
-          actionable = c["critical"] + c["high"]
+          input_valid = bool(d.get("input_valid"))
+          actionable = c["critical"] + c["high"] if input_valid else 0
+          print(f"input_valid={'true' if input_valid else 'false'}")
           print(f"actionable={'true' if actionable else 'false'}")
           print(f"count={actionable}")
           PY
 
       - name: Open or update individual exception cases
         if: always() && steps.check.outputs.actionable == 'true' && github.event_name != 'pull_request'
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7
         with:
           script: |
             const summary = JSON.parse(fs.readFileSync('summary.json', 'utf8'));
@@ -196,4 +201,10 @@ jobs:
         if: always() && steps.check.outputs.actionable == 'true'
         run: |
           echo "Actionable exceptions present -- failing the run to alert."
+          exit 1
+
+      - name: Fail run if input evidence is invalid
+        if: always() && steps.check.outputs.input_valid == 'false'
+        run: |
+          echo "Input evidence failed validation -- no control conclusion was produced."
           exit 1

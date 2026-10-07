@@ -3,14 +3,18 @@
 import json
 from datetime import date
 
-from src.main import _exit_code
+from src.main import _code_revision, _exit_code
 from src.models import (
     Finding,
     ReviewResult,
     Severity,
     TerminatedEmployee,
 )
-from src.reporting import render_markdown_summary, write_summary_json
+from src.reporting import (
+    render_markdown_summary,
+    write_exception_log,
+    write_summary_json,
+)
 
 
 def _emp():
@@ -63,12 +67,19 @@ def test_exit_code_clean_result_passes():
     assert _exit_code(_result(), "critical") == 0
 
 
+def test_explicit_code_revision_takes_precedence(monkeypatch):
+    monkeypatch.setenv("CONTROL_CODE_REVISION", "workflow-sha")
+    assert _code_revision("release-tag") == "release-tag"
+    assert _code_revision(None) == "workflow-sha"
+
+
 def test_summary_json_shape(tmp_path):
     path = tmp_path / "summary.json"
     control = {"id": "ITGC-AD-001", "name": "Termination Access"}
     responses = {"TA-01": {"remediation": "Disable access."}}
     result = _result(Severity.CRITICAL, Severity.HIGH)
     result.run_id = "AD-20260917T010203Z"
+    result.code_revision = "abc123"
     write_summary_json(
         result, 7, str(path),
         control=control, rule_responses=responses,
@@ -79,8 +90,10 @@ def test_summary_json_shape(tmp_path):
     assert data["counts_by_severity"]["high"] == 1
     assert data["sla_days"] == 7
     assert data["run_id"] == "AD-20260917T010203Z"
+    assert data["code_revision"] == "abc123"
     assert data["control"]["id"] == "ITGC-AD-001"
     assert data["findings"][0]["finding_id"].startswith("AD-")
+    assert data["findings"][0]["code_revision"] == "abc123"
     assert data["findings"][0]["remediation"] == "Disable access."
 
 
@@ -90,13 +103,29 @@ def test_markdown_summary_clean_message():
 
 
 def test_markdown_summary_lists_findings():
+    result = _result(Severity.CRITICAL)
+    result.code_revision = "abc123"
     md = render_markdown_summary(
-        _result(Severity.CRITICAL), 7,
+        result, 7,
         rule_responses={"TA-01": {"remediation": "Disable access."}},
     )
     assert "TA-01" in md
     assert "| Severity |" in md
     assert "required response" in md
+    assert "Code revision: `abc123`" in md
+
+
+def test_exception_log_retains_code_revision(tmp_path):
+    path = tmp_path / "exceptions.csv"
+    write_exception_log(
+        _result(Severity.CRITICAL).findings,
+        str(path),
+        run_id="AD-20260917T010203Z",
+        code_revision="abc123",
+    )
+    rows = path.read_text(encoding="utf-8").splitlines()
+    assert "code_revision" in rows[0]
+    assert "abc123" in rows[1]
 
 
 def test_owner_routing_in_summary_and_markdown(tmp_path):

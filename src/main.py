@@ -15,6 +15,8 @@ gives downstream steps (issue creation, Slack) structured data to work from.
 from __future__ import annotations
 
 import argparse
+import os
+import subprocess
 import sys
 from datetime import datetime, timezone
 
@@ -39,12 +41,32 @@ _THRESHOLDS = {
 }
 
 
+def _code_revision(explicit_revision: str | None) -> str:
+    """Prefer an explicit/workflow revision, then resolve the local Git commit."""
+    configured = explicit_revision or os.getenv("CONTROL_CODE_REVISION")
+    if configured:
+        return configured
+    try:
+        completed = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+        revision = completed.stdout.strip()
+        return revision or "unrecorded"
+    except (OSError, subprocess.SubprocessError):
+        return "unrecorded"
+
+
 def run(
     config_path: str,
     sla_override: int | None,
     out_path: str | None,
     summary_json_path: str | None = None,
     issue_md_path: str | None = None,
+    code_revision: str | None = None,
 ) -> ReviewResult:
     with open(config_path, encoding="utf-8") as fh:
         cfg = yaml.safe_load(fh)
@@ -54,6 +76,7 @@ def run(
     control = cfg.get("control", {})
     rule_responses = cfg.get("rule_responses", {})
     run_id = f"AD-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}"
+    effective_code_revision = _code_revision(code_revision)
 
     system_owners = {
         s["name"]: s["owner"] for s in cfg["systems"] if s.get("owner")
@@ -67,7 +90,11 @@ def run(
         # A mapped column is missing, so the extract is mis-shaped and the output
         # cannot be trusted. Record the failure and stop: a control must never
         # report "clean" on inputs it was unable to validate.
-        result = ReviewResult(input_valid=False, run_id=run_id)
+        result = ReviewResult(
+            input_valid=False,
+            run_id=run_id,
+            code_revision=effective_code_revision,
+        )
         if summary_json_path:
             reporting.write_summary_json(
                 result, sla_days, summary_json_path, system_owners, input_checks,
@@ -94,13 +121,18 @@ def run(
         matched_identities=len(identities),
         unmatched_employees=unmatched,
         run_id=run_id,
+        code_revision=effective_code_revision,
     )
 
     reporting.print_summary(result)
 
     if out_path:
         path = reporting.write_exception_log(
-            findings, out_path, rule_responses, result.run_id
+            findings,
+            out_path,
+            rule_responses,
+            result.run_id,
+            result.code_revision,
         )
         print(f"\nException log written to: {path}")
 
@@ -149,13 +181,25 @@ def main() -> None:
         "--issue-md", default=None, help="Path for a Markdown summary (issue/alert body)"
     )
     parser.add_argument(
+        "--code-revision",
+        default=None,
+        help="Git commit or release identifier retained in generated evidence",
+    )
+    parser.add_argument(
         "--fail-on",
         choices=list(_THRESHOLDS.keys()),
         default="none",
         help="Exit non-zero when a finding of this severity or worse exists",
     )
     args = parser.parse_args()
-    result = run(args.config, args.sla, args.out, args.summary_json, args.issue_md)
+    result = run(
+        args.config,
+        args.sla,
+        args.out,
+        args.summary_json,
+        args.issue_md,
+        args.code_revision,
+    )
     sys.exit(_exit_code(result, args.fail_on))
 
 

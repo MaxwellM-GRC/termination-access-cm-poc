@@ -11,10 +11,10 @@ decision to rely on the automated control.
 
 ## 1. Completeness and accuracy of inputs (IPE)
 
-The control consumes three data extracts: the HR termination roster (the
-population) and one account extract per in-scope system. Because a conclusion is
-drawn from these, they are Information Produced by the Entity (IPE) and must be
-complete and accurate for the control to be relied upon.
+The sample control consumes four data inputs: the HR termination roster (the
+population) and three account extracts, one for each configured system. Because
+a conclusion is drawn from these, they are Information Produced by the Entity
+(IPE) and must be complete and accurate for the control to be relied upon.
 
 ### Source provenance contract
 
@@ -35,11 +35,12 @@ Two design features protect input integrity:
 
 - **Automated input edit checks (fail-closed).** Before the review runs,
   `src/integrity.py` validates each extract: it confirms every column the config
-  maps is physically present, counts rows read (population completeness), and
-  flags rows with blank key fields or unparsable dates (accuracy). If a mapped
-  column is missing, the run aborts with a distinct exit code and records the
-  failure in the summary, so the control never reports a clean result on inputs
-  it could not validate.
+  maps is physically present, captures row counts for later reconciliation, and
+  flags rows with blank key fields, unparsable dates, or unknown account states.
+  These structural checks do not prove that the source returned its complete
+  authoritative population. If a check fails, the run aborts with a distinct
+  exit code and records the failure in the summary, so the control never reports
+  a clean result on inputs it could not validate.
 - **Coverage is reconciled.** Every terminated identity is either correlated to
   one or more accounts or reported as unmatched (see the run summary counts), so
   no member of the population is silently dropped from the review.
@@ -65,13 +66,17 @@ they support the audit conclusion.
   The test suite asserts rule behavior and the severity-based exit-code logic, so
   the outputs are traceable to tested logic rather than ad hoc calculation.
 - **Reproducibility and re-performance.** The output is a pure function of the
-  input extracts, the configuration, and the code version. Recording the git
-  commit SHA, `config.yaml`, and the extracts lets an auditor re-perform the run
-  and obtain identical results.
+  input extracts, the configuration, and the code version. The JSON summary,
+  Markdown report, and exception-log rows retain the code revision supplied by
+  the workflow. Retaining that revision, `config.yaml`, and the extracts lets an
+  auditor re-perform the run and obtain identical results.
 - **Evidence integrity.** Each run's log and summary are retained as a timestamped
-  artifact. Each actionable finding has a stable ID and a dedicated exception
-  case, which provides an independent, timestamped record of assignment,
-  remediation, escalation, closure, and recurrence.
+  demonstration artifact. Public GitHub artifact retention is not sufficient for
+  annual SOX evidence. Production must export the package to an immutable,
+  access-controlled store under the approved retention policy. Each actionable
+  finding has a stable ID and a dedicated demonstration case for routing, aging,
+  escalation, and recurrence; production closure evidence and approval require
+  an enforced case workflow.
 
 ## 3. Change management over the control
 

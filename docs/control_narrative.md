@@ -59,6 +59,8 @@ extent described in the product profile.
   (terminated reviewed, accounts ingested, identities correlated, unmatched).
 - **Configuration** (`config.yaml`): documents the SLA and the exact field/status
   mapping used for the run, so the test is reproducible.
+- **Code revision**: the JSON summary, Markdown report, and each exception-log
+  row identify the workflow-supplied Git commit used for the run.
 - **Exception cases** (continuous-monitoring mode): each actionable finding has
   a stable finding ID and a dedicated GitHub Issue. The case includes the owner,
   prescribed response, aging, and closure evidence checklist, so it can be

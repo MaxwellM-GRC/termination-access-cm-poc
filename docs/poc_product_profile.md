@@ -57,17 +57,18 @@ scope, applicability, control ownership, and reliance.
 |---|---|---|---|
 | HR and account extracts are complete and authoritative. | Assumed for company use | Reconcile API or report populations to source-system totals before reliance. | Control owner and system owners |
 | Email and normalized-name matching identifies the correct person. | Assumed | Use a governed workforce identifier and route ambiguous matches for review. | Identity governance |
-| Seven-day default and immediate involuntary-termination timing reflect policy. | Assumed | Configure approved company, system, role, and termination-type requirements. | Control owner |
+| Seven-day default, immediate involuntary-termination timing, and weekday POC cadence reflect policy. | Assumed | Configure approved company, system, role, termination-type requirements, and a production cadence capable of meeting them. | Control owner |
 | Monitoring credentials and retained evidence are protected. | Assumed | Use least-privilege service identities, encryption, access logs, and retention controls. | Security and platform owners |
 | Rule results are useful without creating unacceptable false positives or gaps. | Verified only for fixtures | Run a historical sample and compare results with known cases and manual review. | Control owner and reviewer |
 | Framework mappings are appropriate for the adopting company. | Assumed | Validate against the approved RCM, framework versions, scope, and assurance approach. | GRC and Internal Audit |
 
 ## 5. Proof plan
 
-- **Success metrics:** All retained source populations pass integrity checks;
-  all terminated identities are accounted for as correlated or unmatched; all
-  seeded exception scenarios produce the expected rule and severity; and no
-  production remediation, risk acceptance, or closure occurs automatically.
+- **Success metrics:** All inputs pass documented structural checks and pilot
+  source counts reconcile; all terminated identities are accounted for as
+  correlated or unmatched; all seeded exception scenarios produce the expected
+  rule and severity; and no production remediation, risk acceptance, or closure
+  occurs automatically.
 - **Pilot validation:** Use a bounded historical period, reconcile source totals,
   compare findings with known termination cases, and have control and system
   owners assess false positives, missing cases, and response usefulness.

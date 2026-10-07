@@ -111,6 +111,8 @@ class ReviewResult:
     # One immutable identifier ties the source provenance, findings, evidence,
     # and exception cases produced by a single control execution together.
     run_id: str = ""
+    # Git commit or release identifier for the control code used by the run.
+    code_revision: str = "unrecorded"
 
     @property
     def population_reconciled(self) -> bool:

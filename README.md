@@ -37,6 +37,25 @@ things:
 
 Only correlating identities across all three systems surfaces both.
 
+## What a company would need to implement this
+
+The POC supplies the detection pattern; a company supplies and approves the
+operating context below.
+
+| Implementation need | Company input or decision |
+|---|---|
+| Authoritative populations | Governed HR termination data and complete account populations from every in-scope system |
+| Identity matching | A stable workforce identifier and rules for contractors, shared accounts, service accounts, and ambiguous matches |
+| Control scope and policy | Financial-reporting scope, systems, termination types, approved removal timeframes, severity, and review cadence |
+| Secure integration | Read-only connectors, least-privilege credentials, protected data transfer, and monitored service identities |
+| Evidence and cases | Durable access-controlled evidence storage plus an approved ticket or case platform with retention, response, escalation, and closure controls |
+| Accountable roles | Product owner, control owner, system owners, independent reviewer, and assurance stakeholders |
+| Validation | A bounded historical pilot reconciled to source totals and known cases before control reliance |
+
+The [product profile](docs/poc_product_profile.md) provides the five-minute value
+and risk review. [Production considerations](docs/production_considerations.md)
+describes the implementation steps in more detail.
+
 ## What this control tests
 
 | Control ID | Control description | Severity |
@@ -63,18 +82,25 @@ SSO  ──────┘    schemas)     across systems)                 CSV l
 
 ## Quick start
 
+Prerequisites: Python 3.10–3.13, Git, and network access to install the pinned
+shared core package.
+
 ```bash
 pip install -r requirements.txt
 
 # Run the review and write an exception log
 python -m src.main --out exception_log.csv
 
-# Tighten the SLA to 5 days
+# Demo-only override: test a 5-day SLA without editing config.yaml
 python -m src.main --sla 5
 
 # Run the tests
 python -m pytest -q
 ```
+
+The command-line SLA override is for local scenario testing. A production run
+should use an approved, version-controlled parameter or retain the override and
+its approval in the run evidence.
 
 ## Sample output
 
@@ -104,9 +130,13 @@ Findings: 14  (critical 9, high 5, info 0)
            -> Account disabled 2026-05-30, 12 day(s) past the 7-day SLA deadline.
 ```
 
-The review stops when evidence cannot be verified: it validates the completeness and accuracy of every
-input extract first and, if a mapped column is missing, stops before drawing any
-conclusion. Exit codes: `0` clean, `2` actionable findings (with `--fail-on`),
+The review stops when an extract fails its structural integrity checks. It tests
+mapped-column presence, required keys, date formats, recognized account states,
+and whether required populations are unexpectedly empty; it also records row
+counts, provenance, and content hashes. These checks do not prove that a source
+system returned its complete authoritative population. Production reliance
+requires the captured counts and query parameters to be reconciled to each
+source system. Exit codes: `0` clean, `2` actionable findings (with `--fail-on`),
 `3` input validation failed.
 
 > TA-01 "days active" is measured from the termination date to the run date, so
@@ -114,15 +144,17 @@ conclusion. Exit codes: `0` clean, `2` actionable findings (with `--fail-on`),
 
 The exception log (`exception_log_*.csv`) is one row per finding and one
 component of the evidence package available for auditor review alongside the
-source validation, configuration, run summary, and human response records.
+source validation, configuration, code revision, run summary, and human
+response records.
 
 ## Continuous monitoring
 
 This is built to run on a cadence, not once. A point in time termination review
 tells you about the access gaps that existed on the day someone happened to look;
 run on a schedule against fresh extracts, the same logic becomes a continuously
-monitored control that surfaces each gap as it arises and builds a persistent
-exception trail as audit evidence.
+monitored control that surfaces each gap as it arises. The included GitHub
+workflow demonstrates this pattern with fictional files; it is not a production
+evidence repository.
 
 Two workflows separate concerns:
 
@@ -131,11 +163,16 @@ Two workflows separate concerns:
 - **`access-review.yml`** is the monitoring job. It runs on a weekday schedule
   (`cron: "0 7 * * 1-5"`), on demand, and on merge to `main`.
 
+That weekday schedule matches the POC control metadata. The production cadence
+must be approved against company policy and be capable of meeting the shortest
+configured removal timeframe, including immediate or intraday requirements.
+
 When the scheduled review finds **critical or high** exceptions, it fires a
 notification chain:
 
 1. **Evidence** — the exception log, a JSON summary, and a Markdown report are
-   uploaded as a downloadable run artifact.
+   uploaded as a downloadable run artifact. The outputs include the code
+   revision used for the run.
 2. **Individual exception cases** — every actionable finding receives a stable
    finding ID and its own GitHub Issue (`access-exception-case`). The case
    records its prescribed remediation, mitigation/lookback, root cause prompt,
@@ -143,7 +180,9 @@ notification chain:
    case is reopened. Each in-scope system has an `owner` in `config.yaml` (a
    GitHub `@user` or `@org/team`); the issue @mentions and best-effort assigns
    the owner of the affected system. (Assignees must be repo collaborators; an
-   @mention still notifies a team.)
+   @mention still notifies a team.) GitHub demonstrates routing, but it does not
+   enforce checklist completion, independent closure approval, or segregation
+   of duties.
 3. **Chat alert** — an optional Slack message, sent only if you configure a
    `SLACK_WEBHOOK_URL` repository secret (Settings → Secrets and variables →
    Actions). Without the secret this step is skipped, not failed.
@@ -151,12 +190,23 @@ notification chain:
    actionable findings. It may trigger an email or web notification depending
    on the recipient's GitHub Actions notification settings.
 
+The repository is public and contains only fictional data. Do not send real
+employee, termination, account, or activity data to these Issues, artifacts, or
+chat notifications. A company implementation should use approved private
+infrastructure, minimize sensitive fields, restrict access, and route cases to
+its governed case-management platform.
+
+GitHub Actions artifacts and logs in a public repository are retained for no
+more than 90 days. Annual SOX evidence therefore must be exported to a durable,
+access-controlled store under the company's approved retention policy.
+
 A separate **`escalation.yml`** workflow ages each open exception case daily.
 Cases open past the remediation SLA (`config.yaml` →
 `remediation.issue_sla_days`) get an `escalated` label and a comment tagging the
 `escalation_owner` (typically the control owner above the system admins). This
-gives the control a full exception-aging trail: detection → assignment →
-remediation → escalation → closure.
+demonstrates detection, assignment, aging, and escalation. Remediation evidence,
+independent approval, and closure remain human-controlled activities that a
+production case platform must enforce and retain.
 
 ## Human decision boundary
 
@@ -177,21 +227,34 @@ driven by cron, Airflow, or an orchestration platform, with each run's log
 retained as dated evidence. This maps to the continuous-monitoring control family
 in NIST SP 800-53 (CA-7) and the ongoing-monitoring intent of COBIT 2019 DSS05.
 
-## Why the Access Review workflow shows red
-A red Access Review run is intended behavior, not a broken build.
-The monitoring workflow (access-review.yml) runs the control against the sample data, which contains seeded exceptions (terminated employees still holding active access). When it finds actionable exceptions, it deliberately exits non-zero so a real deployment would trigger an alert. A monitoring control that stayed green while exceptions existed would be failing at its one job.
-So on this repo you will typically see two states side by side, both correct:
+## How to interpret workflow results
+
+The monitoring workflow runs against sample data containing seeded exceptions.
+It deliberately exits non-zero when critical or high findings exist, but a red
+run must still be triaged because execution and evidence failures can also cause
+it.
+
+| Result | Meaning | Required response |
+|---|---|---|
+| Green Access Review | The control completed and found no finding at or above the configured failure threshold. | Confirm the evidence package is complete before relying on the result. |
+| Red Access Review with valid evidence | The control completed and detected actionable access exceptions. | Review the generated cases and retained evidence. |
+| Red Access Review with invalid or missing evidence | The control could not produce a reliable conclusion because inputs, dependencies, or workflow processing failed. | Investigate the control failure; do not interpret it as an access-control conclusion. |
+
+On this repository you will typically see two states side by side:
 
 - **CI (ci.yml)** is green. This runs the test suite and tracks code health. It is the run the README badge reflects.
-- **Access Review** (access-review.yml) is red. The functional steps (input validation, review, evidence upload, issue creation) all succeed; only the final step fails on purpose to raise the alert. The findings it detects are recorded in the access-exception issue.
+- **Access Review** (`access-review.yml`) is red for the seeded sample findings.
+  Verify the run summary before treating any red run as an expected alert.
 
 To see a clean (green) Access Review run, point it at data with no outstanding exceptions.
 
-## Onboarding another system
+## Onboarding another compatible extract
 
-No code change. Add a block under `systems:` in `config.yaml` mapping the new
-extract's columns and its active/disabled vocabulary onto the model. The
-correlation and detection layers pick it up automatically.
+For a compatible flat-file extract, add a block under `systems:` in
+`config.yaml` mapping its columns and active/disabled vocabulary onto the model;
+the correlation and detection layers then use it without a rule-code change.
+APIs, pagination, authentication, timestamp conversion, non-human identities,
+shared accounts, or materially different schemas require a tested adapter.
 
 ## Repo layout
 
@@ -200,7 +263,7 @@ correlation and detection layers pick it up automatically.
   ci.yml               Tests + smoke run (badge tracks this)
   access-review.yml    Scheduled monitoring: artifact, issue, Slack, alert
   escalation.yml       Ages open exception issues past the remediation SLA
-.github/CODEOWNERS      Change-management review over control logic + config
+.github/CODEOWNERS      Review ownership; enforcement requires branch protection
 config.yaml            SLA + per-system schema mappings (audit-reproducible)
 data/                  Fictional HR roster + 3 system account extracts
 src/
@@ -224,6 +287,11 @@ PCAOB AS 2201 · COSO Principle 11 · COBIT 2019 DSS05/DSS06 ·
 NIST SP 800-53 AC-2 & CA-7 · ISO/IEC 27001 A.5.18. Full narrative in
 [`docs/control_narrative.md`](docs/control_narrative.md).
 
+These are audit and control-design cross references, not a conclusion that the
+POC satisfies SOX or any other framework. Company management and its assurance
+professionals must validate financial-reporting scope, significant risks,
+applicability, control ownership, and reliance.
+
 For a concise review of product value, illustrative framework fit, material
 risks, success metrics, and decisions, see the
 [`docs/poc_product_profile.md`](docs/poc_product_profile.md).
@@ -237,8 +305,9 @@ considerations, see
 This is a focused proof of concept, not a production platform. It demonstrates
 the approach — cross-application identity correlation for a single ITGC — on
 fictional data. Production concerns (API ingestion, governed identity mapping,
-per-system SLAs, change control over the tool itself) are noted in the control
-narrative.
+per-system SLAs, data protection, evidence retention, governed case closure, and
+change control over the tool itself) are covered in
+[`docs/production_considerations.md`](docs/production_considerations.md).
 
 ## Shared terminology
 
